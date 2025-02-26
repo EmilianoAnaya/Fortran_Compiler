@@ -7,3 +7,6 @@ class WindowColors(Enum):
     CODE_EDITOR = "#8CAA72"
     TERMINAL = "#1C2315"
     NAV_BAR = "#445437"
+
+class Routes(Enum):
+    COMPILER_FILES = "Compiler_Files/"

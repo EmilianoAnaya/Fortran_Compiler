@@ -1,2 +1,4 @@
 .venv
 __pycache__
+test.py
+Compiler_Files/*.f90
