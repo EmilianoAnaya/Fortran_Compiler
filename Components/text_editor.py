@@ -29,3 +29,9 @@ class TextEditor(tk.Frame):
 
         self.code_text = tk.Text(self, width=132, height=27, bg=WindowColors.CODE_EDITOR.value, fg="Black")
         self.code_text.place(x=8, y=38)
+
+    def clear_editor(self):
+        self.code_text.delete("1.0", tk.END)
+    
+    def insert_code(self, lines):
+        self.code_text.insert("1.0",lines)

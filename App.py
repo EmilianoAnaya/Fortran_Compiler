@@ -14,39 +14,39 @@ class App(tk.Tk):
         self.configure(bg=WindowColors.MAIN_WINDOW.value)
 
         # Menu Bar
-        menu_bar = tk.Menu(bg="#445437")
-        file_menu_commands = [("New", "Ctrl+N"), ("Open","Ctrl+A"), ("Clear Screen","Ctrl+P"), ("Close","Ctrl+Q")]
-        file_menu = MenuButton(self, file_menu_commands)
+        self.menu_bar = tk.Menu(bg="#445437")
+        self.file_menu_commands = [("New", "Ctrl+N"), ("Open","Ctrl+A"), ("Clear Screen","Ctrl+P"), ("Close","Ctrl+Q")]
+        self.file_menu = MenuButton(self, self.file_menu_commands)
 
-        edit_menu_commands = [("Cut","Ctrl+X"), ("Copy", "Ctrl+C"),("Paste", "Ctrl+V"), ("Find","Ctrl+F")]
-        edit_menu = MenuButton(self, edit_menu_commands)
+        self.edit_menu_commands = [("Cut","Ctrl+X"), ("Copy", "Ctrl+C"),("Paste", "Ctrl+V"), ("Find","Ctrl+F")]
+        self.edit_menu = MenuButton(self, self.edit_menu_commands)
 
-        compile_menu_commands = [("Lexic Analisys",None), ("Syntactic Analisys", None),("Semantic Analisys", None), ("Intermediate Code Generation",None),
+        self.compile_menu_commands = [("Lexic Analisys",None), ("Syntactic Analisys", None),("Semantic Analisys", None), ("Intermediate Code Generation",None),
                                  ("Object Code", None)]
-        compile_menu = MenuButton(self, compile_menu_commands)
+        self.compile_menu = MenuButton(self, self.compile_menu_commands)
 
-        help_menu_commands = [("Libraries",None,["stdio.h","conio.h"]), ("Void main", None)]
-        help_menu = MenuButton(self, help_menu_commands)
+        self.help_menu_commands = [("Libraries",None,["stdio.h","conio.h"]), ("Void main", None)]
+        self.help_menu = MenuButton(self, self.help_menu_commands)
 
-        variables_menu_commands = [("Data Type",None,["int","float","String"])]
-        variables_menu = MenuButton(self, variables_menu_commands)
+        self.variables_menu_commands = [("Data Type",None,["int","float","String"])]
+        self.variables_menu = MenuButton(self, self.variables_menu_commands)
 
-        menu_bar.add_cascade(menu=file_menu, label="File")
-        menu_bar.add_cascade(menu=edit_menu, label="Edit")
-        menu_bar.add_cascade(menu=compile_menu, label="Compile")
-        menu_bar.add_cascade(menu=help_menu, label="Help")
-        menu_bar.add_cascade(menu=variables_menu, label="Variables")
-        self.config(menu=menu_bar)
+        self.menu_bar.add_cascade(menu=self.file_menu, label="File")
+        self.menu_bar.add_cascade(menu=self.edit_menu, label="Edit")
+        self.menu_bar.add_cascade(menu=self.compile_menu, label="Compile")
+        self.menu_bar.add_cascade(menu=self.help_menu, label="Help")
+        self.menu_bar.add_cascade(menu=self.variables_menu, label="Variables")
+        self.config(menu=self.menu_bar)
 
         # Frames
-        archives_bar_frame = ArchivesFrame(self)
-        archives_bar_frame.place(x=0,y=0)
+        self.file_editor_frame = TextEditor(self)
+        self.file_editor_frame.place(x=196,y=0)
 
-        file_editor_frame = TextEditor(self)
-        file_editor_frame.place(x=196,y=0)
+        self.archives_bar_frame = ArchivesFrame(self, self.file_editor_frame)
+        self.archives_bar_frame.place(x=0,y=0)
 
-        terminal_frame = TerminalFrame(self)
-        terminal_frame.place(x=196,y=511)
+        self.terminal_frame = TerminalFrame(self, self.archives_bar_frame)
+        self.terminal_frame.place(x=196,y=511)
 
 def main():
     app = App()

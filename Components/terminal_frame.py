@@ -13,13 +13,14 @@ class Label(tk.Label):
         )
 
 class TerminalFrame(tk.Frame):
-    def __init__(self, parent):
+    def __init__(self, parent, archives_frame):
         super().__init__(
             parent,
             bg=WindowColors.TERMINAL.value, 
             width=1090, 
             height=210
         )
+        self.archive_frame = archives_frame
         self.title = Label(self, text="Terminal")
         self.title.place(x=12, y=12)
 
@@ -97,8 +98,10 @@ class TerminalFrame(tk.Frame):
         
         file_name = args[0]
         if file_name[-4:] != ".f90":
-            file_name += file_name+".f90"
+            file_name +=".f90"
         
         file_route = os.path.join(Routes.COMPILER_FILES.value, file_name)
         open(file_route, "w").close()
-        return
+
+        self.archive_frame.clear_files()
+        self.archive_frame.show_files()
