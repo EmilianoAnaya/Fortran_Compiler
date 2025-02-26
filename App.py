@@ -48,6 +48,9 @@ class App(tk.Tk):
         self.terminal_frame = TerminalFrame(self, self.archives_bar_frame)
         self.terminal_frame.place(x=196,y=511)
 
+    def close_app(self):
+        self.destroy()
+
 def main():
     app = App()
     app.mainloop()

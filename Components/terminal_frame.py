@@ -20,13 +20,17 @@ class TerminalFrame(tk.Frame):
             width=1090, 
             height=210
         )
+        self.parent = parent
         self.archive_frame = archives_frame
+
+        self.exit_flag = False
         self.title = Label(self, text="Terminal")
         self.title.place(x=12, y=12)
 
         self.commands: dict = {
             "clear" : self.clear_terminal,
-            "touch" : self.create_file
+            "touch" : self.create_file,
+            "exit" : self.finish_app
         }
 
         self.error_msg: dict = {
@@ -80,9 +84,9 @@ class TerminalFrame(tk.Frame):
                 self.commands[main_command](args)
         elif main_command != "":
             self.show_error_msg(["main_command"])
-            
-        self.input_terminal.insert("end", "\n:/> ")
-        return "break"
+        if not self.exit_flag:    
+            self.input_terminal.insert("end", "\n:/> ")
+            return "break"
     
     def clear_terminal(self):
         self.input_terminal.delete("1.0", tk.END)
@@ -105,3 +109,7 @@ class TerminalFrame(tk.Frame):
 
         self.archive_frame.clear_files()
         self.archive_frame.show_files()
+    
+    def finish_app(self):
+        self.exit_flag = True
+        self.parent.close_app()
