@@ -3,7 +3,7 @@ import tkinter as tk
 class MenuButton(tk.Menu):
     def __init__(self, parent, labels: list[tuple]):
         super().__init__(parent, tearoff=False)
-        self.labels = labels
+        self.labels: list[tuple] = labels
 
         for command in self.labels:
             if len(command) > 2:

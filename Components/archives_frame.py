@@ -23,19 +23,23 @@ class FileName(tk.Label):
             anchor="w"
         )
 
-        self.text = text
-        self.editor_frame = editor_frame
-        self.file_route = Routes.COMPILER_FILES.value+self.text
+        self.text: str = text
+        self.editor_frame: tk.Frame = editor_frame
+        self.file_route: str = Routes.COMPILER_FILES.value+self.text
 
         self.bind("<Enter>", self.on_enter)
         self.bind("<Leave>", self.on_leave)
         self.bind("<Double-Button-1>", self.on_click)
+
 
     def on_click(self, event):
         self.editor_frame.clear_editor()
         with open(self.file_route, "r", encoding="utf-8") as f:
             lines = f.read()
         
+        self.editor_frame.set_title(self.text)
+        
+        self.editor_frame.set_current_file(self.file_route)
         self.editor_frame.insert_code(lines)
 
     def on_enter(self, event):
@@ -52,21 +56,21 @@ class ArchivesFrame(tk.Frame):
             height=720,
             bg=WindowColors.ARCHIVE_BAR.value
         )
-        self.editor_frame = editor_frame
+        self.editor_frame: tk.Frame = editor_frame
 
-        self.title = Title(self, text="Archives")
+        self.title: tk.Label = Title(self, text="Archives")
         self.title.place(x=12, y=12)
 
-        self.spacer = Separator(self, 175)
+        self.spacer: tk.Frame = Separator(self, 175)
         self.spacer.place(x=8, y=33)
 
-        self.archives_background = tk.Frame(self, width=175, height=670, bg=WindowColors.ARCHIVE_SELECTOR.value)
+        self.archives_background: tk.Frame = tk.Frame(self, width=175, height=670, bg=WindowColors.ARCHIVE_SELECTOR.value)
         self.archives_background.place(x=8, y=40)
 
-        self.archives_container = tk.Frame(self, width=175, height=670, bg=WindowColors.ARCHIVE_SELECTOR.value)
+        self.archives_container: tk.Frame = tk.Frame(self, width=175, height=670, bg=WindowColors.ARCHIVE_SELECTOR.value)
         self.archives_container.place(x=8, y=40)
 
-        self.labels = []
+        self.labels: list[tk.Label] = []
 
         self.show_files()
     
