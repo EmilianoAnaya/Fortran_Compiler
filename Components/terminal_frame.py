@@ -73,13 +73,13 @@ class TerminalFrame(tk.Frame):
         self.new_line()
 
     def get_current_line(self):
-        current_line = self.input_terminal.index(tk.INSERT)[0]
+        current_line, _ = self.input_terminal.index(tk.INSERT).split(".")
         row = self.input_terminal.get(f"{current_line}.4", f"{current_line}.end")
         return row
 
     def on_delete(self, event):
-        current_index = int(self.input_terminal.index(tk.INSERT)[2])
-        if current_index == 4:
+        _, current_index = self.input_terminal.index(tk.INSERT).split(".")
+        if int(current_index) == 4:
             return "break"
     
     def on_enter(self, event):
