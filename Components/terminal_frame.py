@@ -2,6 +2,7 @@ import os
 import tkinter as tk
 from constants import WindowColors, Routes
 from Components.separator import Separator
+from Tools.lexic_analyzer import LexicAnalyzer
 
 class Label(tk.Label):
     def __init__(self, parent, text):
@@ -32,16 +33,18 @@ class TerminalFrame(tk.Frame):
         self.commands: dict = {
             "clear" : self.clear_terminal,
             "touch" : self.create_file,
-            "exit" : self.finish_app
+            "exit" : self.finish_app,
+            "lexic_analyzer" : self.lexic_analyzer
         }
 
         self.error_msg: dict = {
             "main_command" : "Error, command not valid",
-            "touch" : {
+            "params" : {
                 "no_params" : "No params detected when creating file",
                 "many_params" : "Too many arguments, expected 1",
             },
-            "not_saved_file" : "Error while saving, no file has been selected"
+            "not_saved_file" : "Error while saving, no file has been selected",
+            "file_not_found" : "The file to use was not found"
         }
 
         self.spacer: tk.Frame = Separator(self, 1060)
@@ -58,6 +61,32 @@ class TerminalFrame(tk.Frame):
         self.input_terminal.bind("<Down>", lambda e: "break")
 
         self.input_terminal.bind("<Control-l>", self.focus_code_frame)
+
+        self.Lexic_analyzer = LexicAnalyzer(self)
+    
+    def finish_app(self):
+        self.error_flag = True
+        self.parent.close_app()
+    
+    def clear_terminal(self):
+        self.input_terminal.delete("1.0", tk.END)
+    
+    def on_delete(self, event):
+        _, current_index = self.input_terminal.index(tk.INSERT).split(".")
+        if int(current_index) == 4:
+            return "break"
+    
+    def new_line(self):
+        self.input_terminal.insert("end", "\n:/> ")
+    
+    def focus_code_frame(self, event):
+        self.code_frame.focus_code()
+    
+    def focus_terminal(self):
+        self.input_terminal.focus_set()
+    
+    def show_line(self, line:str):
+        self.input_terminal.insert("end", f"\n{line}")
     
     def show_msg(self, msg: str):
         self.input_terminal.insert("end", f"\n{msg}")
@@ -76,11 +105,17 @@ class TerminalFrame(tk.Frame):
         current_line, _ = self.input_terminal.index(tk.INSERT).split(".")
         row = self.input_terminal.get(f"{current_line}.4", f"{current_line}.end")
         return row
-
-    def on_delete(self, event):
-        _, current_index = self.input_terminal.index(tk.INSERT).split(".")
-        if int(current_index) == 4:
-            return "break"
+    
+    def params_checker(self, args) -> bool:
+        if args == None:
+            self.show_error_msg(["params","no_params"])
+            return False
+        
+        if len(args) > 1:
+            self.show_error_msg(["params","many_params"])
+            return False
+        
+        return True
     
     def on_enter(self, event):
         self.error_flag = False
@@ -101,22 +136,10 @@ class TerminalFrame(tk.Frame):
             return "break"
         else:
             return "break"  
-    
-    def new_line(self):
-        self.input_terminal.insert("end", "\n:/> ")
-    
-    def clear_terminal(self):
-        self.input_terminal.delete("1.0", tk.END)
 
     def create_file(self, args=None):
-        if args == None:
-            self.show_error_msg(["touch","no_params"])
+        if not self.params_checker(args):
             return
-        
-        if len(args) > 1:
-            self.show_error_msg(["touch","many_params"])
-            return
-        
         file_name = args[0]
         if file_name[-4:] != ".f90":
             file_name +=".f90"
@@ -126,13 +149,17 @@ class TerminalFrame(tk.Frame):
 
         self.archive_frame.clear_files()
         self.archive_frame.show_files()
-    
-    def finish_app(self):
-        self.error_flag = True
-        self.parent.close_app()
 
-    def focus_code_frame(self, event):
-        self.code_frame.focus_code()
-    
-    def focus_terminal(self):
-        self.input_terminal.focus_set()
+    def lexic_analyzer(self, args=None):
+        if not self.params_checker(args):
+            return
+        file_name = args[0]
+        file_route = os.path.join(Routes.COMPILER_FILES.value, file_name)
+        try:
+            with open(file_route, "r", encoding="utf-8") as f:
+                lines = f.read()
+            self.Lexic_analyzer.parse(lines)
+                
+        except FileNotFoundError:
+            self.show_error_msg(["file_not_found"])
+
