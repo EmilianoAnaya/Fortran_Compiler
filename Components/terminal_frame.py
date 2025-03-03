@@ -26,6 +26,8 @@ class TerminalFrame(tk.Frame):
         self.code_frame: tk.Frame = code_frame
 
         self.error_flag: bool = False
+        self.terminal_index: int = -1
+        self.terminal_commands: list = []
 
         self.title: tk.Label = Label(self, text="Terminal")
         self.title.place(x=12, y=12)
@@ -105,6 +107,17 @@ class TerminalFrame(tk.Frame):
         current_line, _ = self.input_terminal.index(tk.INSERT).split(".")
         row = self.input_terminal.get(f"{current_line}.4", f"{current_line}.end")
         return row
+    
+    def commands_shortcut(self, event, index):
+        self.terminal_index =+ index
+        final_index = len(self.terminal_commands)-1
+        if self.terminal_index <= -1:
+            self.terminal_index = -1
+            # Limpiar la línea sin salto de línea
+        elif self.terminal_index > final_index:
+            self.terminal_index = final_index
+        command = self.terminal_commands[self.terminal_index]
+        
     
     def params_checker(self, args) -> bool:
         if args == None:
