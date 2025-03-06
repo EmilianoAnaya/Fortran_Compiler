@@ -26,8 +26,8 @@ class TerminalFrame(tk.Frame):
         self.code_frame: tk.Frame = code_frame
 
         self.error_flag: bool = False
-        self.terminal_index: int = -1
-        self.terminal_commands: list = []
+        self.terminal_index: int = 0
+        self.terminal_commands: list = [""]
 
         self.title: tk.Label = Label(self, text="Terminal")
         self.title.place(x=12, y=12)
@@ -59,8 +59,8 @@ class TerminalFrame(tk.Frame):
         self.input_terminal.bind("<Return>", self.on_enter)
         self.input_terminal.bind("<BackSpace>", self.on_delete)
         self.input_terminal.bind("<Left>", self.on_delete)
-        self.input_terminal.bind("<Up>", lambda e: "break")
-        self.input_terminal.bind("<Down>", lambda e: "break")
+        self.input_terminal.bind("<Up>", lambda e: self.commands_shortcut(e, 1))
+        self.input_terminal.bind("<Down>", lambda e: self.commands_shortcut(e, -1))
 
         self.input_terminal.bind("<Control-l>", self.focus_code_frame)
 
@@ -108,16 +108,32 @@ class TerminalFrame(tk.Frame):
         row = self.input_terminal.get(f"{current_line}.4", f"{current_line}.end")
         return row
     
+    def commands_saver(self, command):
+        if command in self.terminal_commands:
+            self.terminal_commands.remove(command)
+        self.terminal_commands.insert(1, command)
+        self.terminal_index = 0
+        
     def commands_shortcut(self, event, index):
-        self.terminal_index =+ index
+        self.terminal_index += index
         final_index = len(self.terminal_commands)-1
-        if self.terminal_index <= -1:
-            self.terminal_index = -1
+
+        if self.terminal_index < 0:
+            self.terminal_index = 0
             # Limpiar la línea sin salto de línea
         elif self.terminal_index > final_index:
             self.terminal_index = final_index
+
         command = self.terminal_commands[self.terminal_index]
-        
+        current_index = self.input_terminal.index(tk.INSERT)
+        start = current_index.split(".")[0] + ".0"
+        end = current_index.split(".")[0] + ".end"
+
+        self.input_terminal.delete(start +"+4c",end)
+
+        self.input_terminal.insert("end", command)
+
+        return "break"        
     
     def params_checker(self, args) -> bool:
         if args == None:
@@ -133,6 +149,7 @@ class TerminalFrame(tk.Frame):
     def on_enter(self, event):
         self.error_flag = False
         row = self.get_current_line()
+        self.commands_saver(row)
         if row != "":
             main_command = row.split()[0]
             args = row.split()[1:] if row.split()[1:] != [] else None
