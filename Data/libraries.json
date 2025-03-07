@@ -1,0 +1,10 @@
+{
+    "fpm_error" : {
+        "error_t" : "this",
+        "fatal_error" : "Full Error",
+        "file_not_found_error" : "File Not Found"
+    },
+    "fpm_strings" : {
+        "string_t" : "the string"
+    }
+}

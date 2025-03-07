@@ -10,3 +10,4 @@ class WindowColors(Enum):
 
 class Routes(Enum):
     COMPILER_FILES = "Compiler_Files/"
+    LIBRARIES = "Data/libraries.json"

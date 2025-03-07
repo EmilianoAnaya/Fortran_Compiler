@@ -31,8 +31,8 @@ class FileName(tk.Label):
         self.bind("<Leave>", self.on_leave)
         self.bind("<Double-Button-1>", self.on_click)
 
-
     def on_click(self, event):
+        self.editor_frame.enable_editor()
         self.editor_frame.clear_editor()
         with open(self.file_route, "r", encoding="utf-8") as f:
             lines = f.read()

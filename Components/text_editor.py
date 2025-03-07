@@ -31,7 +31,7 @@ class TextEditor(tk.Frame):
         self.spacer: tk.Frame = Separator(self, 1060, "Black")
         self.spacer.place(x=8, y=33)
 
-        self.code_text: tk.Text = tk.Text(self, width=132, height=27, bg=WindowColors.CODE_EDITOR.value, fg="Black")
+        self.code_text: tk.Text = tk.Text(self, width=132, height=27, bg=WindowColors.CODE_EDITOR.value, fg="Black", state="disabled", undo="True")
         self.code_text.place(x=8, y=38)
 
         self.code_text.bind("<Control-s>", self.save_file)
@@ -39,7 +39,7 @@ class TextEditor(tk.Frame):
 
     def save_file(self, event):
         if self.current_file != None:
-            code_lines = self.code_text.get("1.0", tk.END)
+            code_lines = self.code_text.get("1.0", tk.END).rstrip()
             with open(self.current_file, "w", encoding="utf-8") as f:
                 f.write(code_lines)
 
@@ -55,6 +55,12 @@ class TextEditor(tk.Frame):
 
     def set_title(self, file_name: str):
         self.title.config(text=f"Code Editor - {file_name}")
+    
+    def enable_editor(self):
+        self.code_text.config(state="normal")
+
+    def desable_editor(self):
+        self.code_text.config(state="disabled")
     
     def clear_editor(self):
         self.code_text.delete("1.0", tk.END)

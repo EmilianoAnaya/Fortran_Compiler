@@ -2,7 +2,7 @@ import os
 import tkinter as tk
 from constants import WindowColors, Routes
 from Components.separator import Separator
-from Tools.lexic_analyzer import LexicAnalyzer
+from Tools.automaton import Compiler
 
 class Label(tk.Label):
     def __init__(self, parent, text):
@@ -36,7 +36,8 @@ class TerminalFrame(tk.Frame):
             "clear" : self.clear_terminal,
             "touch" : self.create_file,
             "exit" : self.finish_app,
-            "lexic_analyzer" : self.lexic_analyzer
+            "lexic_analyzer" : self.lexic_analyzer,
+            "gfortran" : self.compile_file
         }
 
         self.error_msg: dict = {
@@ -63,8 +64,7 @@ class TerminalFrame(tk.Frame):
         self.input_terminal.bind("<Down>", lambda e: self.commands_shortcut(e, -1))
 
         self.input_terminal.bind("<Control-l>", self.focus_code_frame)
-
-        self.Lexic_analyzer = LexicAnalyzer(self)
+        self.compiler = Compiler(self)
     
     def finish_app(self):
         self.error_flag = True
@@ -124,8 +124,8 @@ class TerminalFrame(tk.Frame):
         elif self.terminal_index > final_index:
             self.terminal_index = final_index
 
-        command = self.terminal_commands[self.terminal_index]
-        current_index = self.input_terminal.index(tk.INSERT)
+        command: str = self.terminal_commands[self.terminal_index]
+        current_index: int = self.input_terminal.index(tk.INSERT)
         start = current_index.split(".")[0] + ".0"
         end = current_index.split(".")[0] + ".end"
 
@@ -188,8 +188,21 @@ class TerminalFrame(tk.Frame):
         try:
             with open(file_route, "r", encoding="utf-8") as f:
                 lines = f.read()
-            self.Lexic_analyzer.parse(lines)
+            self.compiler.parse(lines)
                 
         except FileNotFoundError:
             self.show_error_msg(["file_not_found"])
 
+    def compile_file(self, args=None):
+        if not self.params_checker(args):
+            return
+        file_name = args[0]
+        file_route = os.path.join(Routes.COMPILER_FILES.value, file_name)
+        try:
+            with open(file_route, "r", encoding="utf-8") as f:
+                lines = [line.strip() for line in f]
+
+            self.compiler.compile(lines)
+                
+        except FileNotFoundError:
+            self.show_error_msg(["file_not_found"])
