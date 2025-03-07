@@ -108,11 +108,13 @@ class TerminalFrame(tk.Frame):
         row = self.input_terminal.get(f"{current_line}.4", f"{current_line}.end")
         return row
     
-    def commands_saver(self, command):
-        if command in self.terminal_commands:
-            self.terminal_commands.remove(command)
-        self.terminal_commands.insert(1, command)
-        self.terminal_index = 0
+    def commands_saver(self, command:str):
+        if command != "":
+            command = command.strip()
+            if command in self.terminal_commands:
+                self.terminal_commands.remove(command)
+            self.terminal_commands.insert(1, command)
+            self.terminal_index = 0
         
     def commands_shortcut(self, event, index):
         self.terminal_index += index
