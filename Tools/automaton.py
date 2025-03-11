@@ -156,7 +156,7 @@ class Compiler():
             sub_operations.append(tmp_string)
         
         if not self.check_integrity(sub_operations):
-            return self.terminal.show_line("The integrity of the operation is unclear")
+            return self.error_handler("The integrity of the operation is unclear"), False
 
         if args != None:
             for i, arg in enumerate(args):
@@ -180,7 +180,10 @@ class Compiler():
         formatted_args = [arg.replace(",","") for arg in args]
 
         for arg in formatted_args:
-            self.variables[arg] = {"data_type" : data_type, "value" : None}
+            if not arg in self.variables:
+                self.variables[arg] = {"data_type" : data_type, "value" : None}
+            else:
+                return self.error_handler(f"The {arg} variable has been initialized before has a {self.variables[arg]["data_type"]}")
     
     def is_math_operation(self, expression):
         operator_detected = False
@@ -207,8 +210,14 @@ class Compiler():
                     return self.error_handler(f"Error, the data type for {main_variable} value it's different for the variable itself")
             else:
                 self.variables[main_variable]["value"] = expression.capitalize()
-                 
+
+    def reset_all(self):
+        self.compile_error_flag: bool = False
+        self.current_libraries: dict = {}
+        self.variables: dict = {}             
+    
     def compile(self, lines: list[str]):
+        self.reset_all()
         self.compile_error_flag = False
         for line in lines:
             if self.compile_error_flag:
