@@ -161,11 +161,13 @@ class Compiler():
         if args != None:
             for i, arg in enumerate(args):
                 if arg in self.variables:
+                    if self.variables[arg]["value"] == None:
+                        return self.error_handler(f"The {arg} variable has not yet a value"), False
                     args.pop(i)
                     args.insert(i, str(self.variables[arg]["value"]))
             
             operation = " ".join(args)
-            return operation
+            return operation, True
 
     def variable_initialization(self, line):
         data_type = line[0]
@@ -194,7 +196,9 @@ class Compiler():
         if operation == "=":
             expression = " ".join(args)
             if self.is_math_operation(expression):
-                result = self.parse(expression, args)
+                result, flag = self.parse(expression, args)
+                if not flag:
+                    return
                 expression = eval(result, {"__builtins__": None}, {})
             if expression not in ("False", "True"):
                 try: 
