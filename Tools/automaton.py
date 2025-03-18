@@ -25,11 +25,13 @@ class Compiler():
 
         self.commands : dict = {
             "print*," : self.print_args,
-            "use" : self.add_libraries
+            "use" : self.add_libraries,
+            "if" : self.validation_structure
         }
 
         self.terminal:TerminalFrame = terminal
         self.compile_error_flag: bool = False
+        self.end_if_flag: bool = False
         self.current_libraries: dict = {}
         self.variables: dict = {}
     
@@ -125,6 +127,19 @@ class Compiler():
             return self.error_handler(f"Error, the {arg} value is not defined")
         
         self.terminal.show_line(" ".join(map(str, output)))
+
+    def check_end_if(self) -> bool:
+        ...
+    
+    def validation_structure(self, line):
+        args = " ".join(line[1:-1])
+        __if = line[0]
+        __then = line[-1]
+        if __if != "if" or __then != "then":
+            return self.error_handler(f"Error, the if structure is not well made")
+        if not self.end_if_flag:
+            self.check_end_if()
+        print(args)
     
     def parse(self, expression, args: list = None):
         tmp_string: str = ""
@@ -151,7 +166,6 @@ class Compiler():
                 else:
                     return self.terminal.show_line("The integrity of the operation is wrong")
                     
-
         if tmp_string.isalnum():
             sub_operations.append(tmp_string)
         
@@ -213,11 +227,13 @@ class Compiler():
 
     def reset_all(self):
         self.compile_error_flag: bool = False
+        self.end_if_flag: bool = False
         self.current_libraries: dict = {}
-        self.variables: dict = {}             
+        self.variables: dict = {}            
     
     def compile(self, lines: list[str]):
         self.reset_all()
+        self.code = lines
         self.compile_error_flag = False
         for line in lines:
             if self.compile_error_flag:
