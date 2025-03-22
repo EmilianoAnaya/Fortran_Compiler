@@ -1,4 +1,5 @@
 import json
+import re
 from typing import TYPE_CHECKING
 from constants import Routes
 
@@ -6,7 +7,7 @@ if TYPE_CHECKING:
     from Components.terminal_frame import TerminalFrame
 
 class Compiler():
-    def __init__(self, terminal):
+    def __init__(self, terminal, Testing=False):
         self.data_type: dict = {
             "integer" : int,
             "real" : float,
@@ -20,20 +21,44 @@ class Compiler():
             "-" : "Resta",
             "*" : "Multiplica",
             "/" : "Divide",
-            "=" : "Iguala"
+            "=" : "Iguala",
+            ">" : "Mayor",
+            "<" : "Menor",
+            ">=": "Mayor o igual",
+            "<=": "Menor o igual",
+            "==": "Igual que"
         }
 
         self.commands : dict = {
-            "print*," : self.print_args,
-            "use" : self.add_libraries,
-            "if" : self.validation_structure
+            "print*," : self.print_args
         }
+
+        self.reserved_words : dict = {
+            "use"   : self.add_libraries,
+            "if"    : self.validation_structure,
+            "else"  : self.else_command,
+            "end"   : self.end_command
+        }
+        
+        # Debug Tools
+        self.testing_flag = Testing
+        # 
 
         self.terminal:TerminalFrame = terminal
         self.compile_error_flag: bool = False
         self.end_if_flag: bool = False
+        self.if_section_done: bool = False
+        self.ignore_sections: bool = False
         self.current_libraries: dict = {}
         self.variables: dict = {}
+    
+    # Debug Functions #
+    def showing_messages(self, msg):
+        if self.testing_flag:
+            print(msg)
+        else:
+            self.terminal.show_line(msg)
+    ####################
     
     def get_variable_value(self, variable):
         return self.variables[variable]["value"]
@@ -51,16 +76,16 @@ class Compiler():
     def syntactic_analysis(self, tree: list, level: int = 0):
         identation: str = " "*level
         operand: str = tree[1]
-        self.terminal.show_line(f"{identation}{self.operands[operand]}: {operand}")
+        self.showing_messages(f"{identation}{self.operands[operand]}: {operand}")
         if type(tree[0]) == list:
             self.syntactic_analysis(tree[0], level+1)
         else:
-            self.terminal.show_line(f"{identation} Numero: {tree[0]}")
-        self.terminal.show_line(f"{identation} Numero: {tree[2]}")
+            self.showing_messages(f"{identation} Numero: {tree[0]}")
+        self.showing_messages(f"{identation} Numero: {tree[2]}")
         
     def error_handler(self, msg):
         self.compile_error_flag = True
-        self.terminal.show_line(msg)
+        self.showing_messages(msg)
     
     def add_libraries(self, line: list[str]):
         main_library = line[1].replace(",","")
@@ -126,20 +151,71 @@ class Compiler():
 
             return self.error_handler(f"Error, the {arg} value is not defined")
         
-        self.terminal.show_line(" ".join(map(str, output)))
+        self.showing_messages(" ".join(map(str, output)))
 
-    def check_end_if(self) -> bool:
-        ...
+    def check_end_if(self, line) -> bool:
+        formatted_line = " ".join(line)
+        current_if_index = self.code.index(formatted_line)
+        for i in range(current_if_index, len(self.code)):
+            if self.code[i] == "end if":
+                self.end_if_flag = True
+                self.if_section_done = False
+                self.ignore_sections = True
+                return True
+        
+        return False
+    
+    def else_command(self, line):
+        if not self.ignore_sections:
+            self.if_section_done = True
+            return
+        if len(line) > 1:
+            if_statement = line[1:]
+            self.validation_structure(if_statement)
+        else:
+            self.ignore_sections = False
+
+    def end_command(self, line):
+        reserved_word = line[1]
+        args = line[2:]
+        if not reserved_word in self.reserved_words:
+            return self.error_handler(f"Error, the argument {reserved_word}")
+        
+        if reserved_word == "if":
+            self.ignore_sections = False
+            self.if_section_done = False
+            self.end_if_flag = False
+            return
     
     def validation_structure(self, line):
         args = " ".join(line[1:-1])
-        __if = line[0]
-        __then = line[-1]
-        if __if != "if" or __then != "then":
+        _if = line[0]
+        _then = line[-1]
+        if _if != "if" or _then != "then" or args[0] != '(' or args[-1] != ')':
             return self.error_handler(f"Error, the if structure is not well made")
         if not self.end_if_flag:
-            self.check_end_if()
-        print(args)
+            if not self.check_end_if(line):
+                return self.error_handler(f"Error, the if structure doesn't have an end if statement")
+    
+        formatted_arg = args[1:-1]
+        elements = formatted_arg.split()
+        
+        if len(elements) > 1:
+            if elements[1] == "=":
+                return self.error_handler(f"Error, you are usign the '=' operator inside a if statement")
+
+        self.check_operation(elements)
+    
+    def formating_operation(self, args):
+        for i, arg in enumerate(args):
+                if arg in self.variables:
+                    if self.variables[arg]["value"] == None:
+                        return self.error_handler(f"The {arg} variable has not yet a value"), False
+                    args.pop(i)
+                    args.insert(i, str(self.variables[arg]["value"]))
+            
+        operation = " ".join(args)
+        return operation
     
     def parse(self, expression, args: list = None):
         tmp_string: str = ""
@@ -164,7 +240,7 @@ class Compiler():
                     sub_operations.append(char)
                     tmp_string = ""
                 else:
-                    return self.terminal.show_line("The integrity of the operation is wrong")
+                    return self.showing_messages("The integrity of the operation is wrong")
                     
         if tmp_string.isalnum():
             sub_operations.append(tmp_string)
@@ -173,14 +249,7 @@ class Compiler():
             return self.error_handler("The integrity of the operation is unclear"), False
 
         if args != None:
-            for i, arg in enumerate(args):
-                if arg in self.variables:
-                    if self.variables[arg]["value"] == None:
-                        return self.error_handler(f"The {arg} variable has not yet a value"), False
-                    args.pop(i)
-                    args.insert(i, str(self.variables[arg]["value"]))
-            
-            operation = " ".join(args)
+            operation = self.formating_operation(args)
             return operation, True
 
     def variable_initialization(self, line):
@@ -224,12 +293,19 @@ class Compiler():
                     return self.error_handler(f"Error, the data type for {main_variable} value it's different for the variable itself")
             else:
                 self.variables[main_variable]["value"] = expression.capitalize()
+        else:
+            result = self.formating_operation(line)
+            expression = eval(result, {"__builtins__": None}, {})
+            if expression:
+                self.ignore_sections = False
 
     def reset_all(self):
         self.compile_error_flag: bool = False
         self.end_if_flag: bool = False
+        self.if_section_done: bool = False
+        self.ignore_sections: bool = False
         self.current_libraries: dict = {}
-        self.variables: dict = {}            
+        self.variables: dict = {}           
     
     def compile(self, lines: list[str]):
         self.reset_all()
@@ -238,19 +314,25 @@ class Compiler():
         for line in lines:
             if self.compile_error_flag:
                 break
+
             formated_line = line.split(" ")
             main_command = formated_line[0]
 
-            if main_command in self.data_type:
-                self.variable_initialization(formated_line)
+            if main_command in self.reserved_words:
+                self.reserved_words[main_command](formated_line)
                 continue
 
-            if main_command in self.variables:
-                self.check_operation(formated_line)
-                continue
+            if self.ignore_sections == False and self.if_section_done == False:
+                if main_command in self.commands:
+                    self.commands[main_command](formated_line)
+                    continue
+                
+                if main_command in self.data_type:
+                    self.variable_initialization(formated_line)
+                    continue
 
-            if main_command in self.commands:
-                self.commands[main_command](formated_line)
-                continue
+                if main_command in self.variables:
+                    self.check_operation(formated_line)
+                    continue
 
-            return self.terminal.show_line(f"Error, '{main_command}' command used is non existing")
+                return self.showing_messages(f"Error, '{main_command}' command used is non existing")
