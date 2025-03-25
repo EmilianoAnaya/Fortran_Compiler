@@ -299,6 +299,8 @@ class Compiler():
                 expression = eval(result, {"__builtins__": None}, {})
             except SyntaxError:
                 return self.error_handler(f"Error, the arguments for the if structure are not well made")
+            except TypeError:
+                return self.error_handler(f"Error, the variables used are non existing or mistakenly written in the if-then-else structure")
             if expression:
                 self.ignore_sections = False
 
