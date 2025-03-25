@@ -295,7 +295,10 @@ class Compiler():
                 self.variables[main_variable]["value"] = expression.capitalize()
         else:
             result = self.formating_operation(line)
-            expression = eval(result, {"__builtins__": None}, {})
+            try:
+                expression = eval(result, {"__builtins__": None}, {})
+            except SyntaxError:
+                return self.error_handler(f"Error, the arguments for the if structure are not well made")
             if expression:
                 self.ignore_sections = False
 
