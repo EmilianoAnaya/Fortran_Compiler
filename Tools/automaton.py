@@ -37,7 +37,9 @@ class Compiler():
             "use"   : self.add_libraries,
             "if"    : self.validation_structure,
             "else"  : self.else_command,
-            "end"   : self.end_command
+            "end"   : self.end_command,
+            "select": self.select_command,
+            "case"  : self.case_command
         }
         
         # Debug Tools
@@ -46,9 +48,16 @@ class Compiler():
 
         self.terminal:TerminalFrame = terminal
         self.compile_error_flag: bool = False
+
         self.end_if_flag: bool = False
         self.if_section_done: bool = False
-        self.ignore_sections: bool = False
+        self.ignore_if_sections: bool = False
+
+        self.end_select_flag: bool = False
+        self.select_section_done: bool = False
+        self.ignore_select_sections: bool = False
+        self.select_tmp_value = None
+        
         self.current_libraries: dict = {}
         self.variables: dict = {}
     
@@ -153,6 +162,18 @@ class Compiler():
         
         self.showing_messages(" ".join(map(str, output)))
 
+    def check_end_select(self, line) -> bool:
+        formatted_line = " ".join(line)
+        current_if_index = self.code.index(formatted_line)
+        for i in range(current_if_index, len(self.code)):
+            if self.code[i] == "end select":
+                self.end_select_flag = True
+                self.select_section_done = False
+                self.ignore_select_sections = True
+                return True
+        
+        return False
+    
     def check_end_if(self, line) -> bool:
         formatted_line = " ".join(line)
         current_if_index = self.code.index(formatted_line)
@@ -160,20 +181,20 @@ class Compiler():
             if self.code[i] == "end if":
                 self.end_if_flag = True
                 self.if_section_done = False
-                self.ignore_sections = True
+                self.ignore_if_sections = True
                 return True
         
         return False
     
     def else_command(self, line):
-        if not self.ignore_sections:
+        if not self.ignore_if_sections:
             self.if_section_done = True
             return
         if len(line) > 1:
             if_statement = line[1:]
             self.validation_structure(if_statement)
         else:
-            self.ignore_sections = False
+            self.ignore_if_sections = False
 
     def end_command(self, line):
         reserved_word = line[1]
@@ -182,11 +203,77 @@ class Compiler():
             return self.error_handler(f"Error, the argument {reserved_word}")
         
         if reserved_word == "if":
-            self.ignore_sections = False
-            self.if_section_done = False
             self.end_if_flag = False
+            self.if_section_done = False
+            self.ignore_if_sections = False
             return
-    
+        
+        if reserved_word == "select":
+            self.end_select_flag = False
+            self.select_section_done = False
+            self.ignore_select_sections = False
+            return
+
+    def case_command(self, line):
+        if not self.ignore_select_sections:
+            self.select_section_done = True
+            return
+        
+        _case = line[0]
+        arg = line[1:]
+        arg = " ".join(arg)
+
+        if _case == "case":
+            if arg == "default":
+                self.ignore_select_sections = False
+            elif arg[0] == "(" and arg[-1] == ")":
+                arg_value = arg[1:-1]
+                arg_value = arg_value[1:-1] if arg_value[0] == '"' and arg_value[-1] == '"' else arg_value
+                result = str(f'"{self.select_tmp_value}" == "{arg_value}"')
+                try:
+                    expression = eval(result, {"__builtins__": None}, {})
+                except TypeError:
+                    return self.error_handler(f"Error, the variables used are non existing or mistakenly written in the case structure")
+                
+                if expression == True:
+                    self.ignore_select_sections = False
+            else:
+                return self.error_handler(f"Error, the case statement is not well made")
+        
+    def select_command(self, line):
+        _select = line[0]
+        _case = line[1]
+        args = line[2:]
+        args = " ".join(args)
+
+        if _select != "select" or _case != "case" or args[0] != '(' or args[-1] != ')':
+            return self.error_handler(f"Error, the 'select case' structure is not well made")
+        if not self.end_select_flag:
+            if not self.check_end_select(line):
+                return self.error_handler(f"Error, the 'select case' structure doesn't have an end select statement")
+
+        formatted_args = args[1:-1]
+        elements = formatted_args.split()
+        
+        if len(elements) > 1:
+            initialization_symbol: bool = False
+            for element in elements:
+                if element == "=":
+                    initialization_symbol = True
+                    break
+            if initialization_symbol:
+                return self.error_handler(f"Error, you are usign the '=' operator inside a 'select case' statement")
+
+        result = self.formating_operation(elements)
+        try:
+            expression = eval(result, {"__builtins__": None}, {})
+        except SyntaxError:
+            return self.error_handler(f"Error, the arguments for the 'select case' structure are not well made")
+        except TypeError:
+            return self.error_handler(f"Error, the variables used are non existing or mistakenly written in the 'select case' structure")
+        if expression:
+            self.select_tmp_value = expression
+        
     def validation_structure(self, line):
         args = " ".join(line[1:-1])
         _if = line[0]
@@ -201,7 +288,12 @@ class Compiler():
         elements = formatted_arg.split()
         
         if len(elements) > 1:
-            if elements[1] == "=":
+            initialization_symbol: bool = False
+            for element in elements:
+                if element == "=":
+                    initialization_symbol = True
+                    break
+            if initialization_symbol:
                 return self.error_handler(f"Error, you are usign the '=' operator inside a if statement")
 
         self.check_operation(elements)
@@ -302,13 +394,13 @@ class Compiler():
             except TypeError:
                 return self.error_handler(f"Error, the variables used are non existing or mistakenly written in the if-then-else structure")
             if expression:
-                self.ignore_sections = False
+                self.ignore_if_sections = False
 
     def reset_all(self):
         self.compile_error_flag: bool = False
         self.end_if_flag: bool = False
         self.if_section_done: bool = False
-        self.ignore_sections: bool = False
+        self.ignore_if_sections: bool = False
         self.current_libraries: dict = {}
         self.variables: dict = {}           
     
@@ -327,7 +419,8 @@ class Compiler():
                 self.reserved_words[main_command](formated_line)
                 continue
 
-            if self.ignore_sections == False and self.if_section_done == False:
+            if (self.ignore_if_sections == False and self.if_section_done == False) and \
+                (self.ignore_select_sections == False and self.select_section_done == False):
                 if main_command in self.commands:
                     self.commands[main_command](formated_line)
                     continue
