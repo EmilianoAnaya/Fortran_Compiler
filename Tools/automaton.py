@@ -201,16 +201,6 @@ class Compiler():
                     return True
                 
         return False
-    
-    # def else_command(self, line):
-    #     if not self.ignore_if_sections:
-    #         self.if_section_done = True
-    #         return
-    #     if len(line) > 1:
-    #         if_statement = line[1:]
-    #         self.validation_structure(if_statement)
-    #     else:
-    #         self.ignore_if_sections = False
 
     def end_command(self, line):
         reserved_word = line[1]
@@ -411,7 +401,7 @@ class Compiler():
             self.check_operation(formatted_line)
             return
         
-        return self.showing_messages(f"Error, '{main_command}' command used is non existing")       
+        return self.error_handler(f"Error, '{main_command}' command used is non existing")       
     
     def compile(self, lines: list[str]):
         for i, line in enumerate(lines):
