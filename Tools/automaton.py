@@ -3,6 +3,8 @@ import json
 from constants import Routes
 from typing import TYPE_CHECKING
 from Tools.if_structure import IfStructure
+from Tools.check_if_structure import check_if_structure
+# from Tools.select_structure import SelectStructure
 
 if TYPE_CHECKING:
     from Components.terminal_frame import TerminalFrame
@@ -48,6 +50,7 @@ class Compiler():
 
         self.terminal:TerminalFrame = terminal
         self.compile_error_flag: bool = False
+        self.code: list[str] = None
         
         self.ignore_code: bool = False
         self.ignore_index: int = -1
@@ -219,32 +222,6 @@ class Compiler():
             self.select_section_done = False
             self.ignore_select_sections = False
             return
-
-    # def case_command(self, line):
-    #     if not self.ignore_select_sections:
-    #         self.select_section_done = True
-    #         return
-        
-    #     _case = line[0]
-    #     arg = line[1:]
-    #     arg = " ".join(arg)
-
-    #     if _case == "case":
-    #         if arg == "default":
-    #             self.ignore_select_sections = False
-    #         elif arg[0] == "(" and arg[-1] == ")":
-    #             arg_value = arg[1:-1]
-    #             arg_value = arg_value[1:-1] if arg_value[0] == '"' and arg_value[-1] == '"' else arg_value
-    #             result = str(f'"{self.select_tmp_value}" == "{arg_value}"')
-    #             try:
-    #                 expression = eval(result, {"__builtins__": None}, {})
-    #             except TypeError:
-    #                 return self.error_handler(f"Error, the variables used are non existing or mistakenly written in the case structure")
-                
-    #             if expression == True:
-    #                 self.ignore_select_sections = False
-    #         else:
-    #             return self.error_handler(f"Error, the case statement is not well made")
         
     # def select_command(self, line):
     #     _select = line[0]
@@ -281,15 +258,17 @@ class Compiler():
     #         self.select_tmp_value = expression
         
     def validation_structure(self, line):
-        args = " ".join(line[1:-1])
-        _if = line[0]
-        _then = line[-1]
-        if _if != "if" or _then != "then" or args[0] != '(' or args[-1] != ')':
-            return self.error_handler(f"Error, the if structure is not well made")
+        ignore_index, ignore_code, tmp_code = check_if_structure(line, self.code)
+        if type(ignore_index) == str:
+            return self.error_handler(ignore_index)
         
-        if not self.check_end_if(line):
-            return self.error_handler(f"Error, the if structure doesn't have an end if statement")
-    
+        self.ignore_index = ignore_index
+        self.ignore_code = ignore_code
+        
+        if_structure = IfStructure(tmp_code, self)
+        self.execute_function = if_structure.execute_if_structure
+
+
     def formating_operation(self, args):
         for i, arg in enumerate(args):
                 if arg in self.variables:

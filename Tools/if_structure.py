@@ -1,4 +1,5 @@
 import re
+from Tools.check_if_structure import check_if_structure, if_then_else_syntax
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -17,44 +18,41 @@ class IfStructure():
 
         self.ifs_counter: int = 0
     
-    def check_end_if(self, line: str):
-        formatted_line = " ".join(line)
-        current_if_index = self.temporal_code.index(formatted_line)
-        if_pile = 0
-        tmp_code: list[str] = []
-        pattern = r"if\s*\(\s*[^()]+\s*\)\s*then"
-
-        for i in range(current_if_index, len(self.temporal_code)):
-            tmp_code.append(self.temporal_code[i])
-            if re.fullmatch(pattern, self.temporal_code[i]):
-                if_pile += 1
-                continue
-
-            if self.temporal_code[i] == "end if":
-                if_pile -= 1
-                if if_pile == 0:
-                    self.ignore_index = i+1
-                    self.ignore_code = True
-                    if_structure = IfStructure(tmp_code, self.compiler)
-                    self.execute_function = if_structure.execute_if_structure
-                    return True
-                
-        return False
-    
     def if_line(self, line: str):
         if self.ignore_if_sections == False and self.if_section_done == False:
             line = line.split()
-            args = " ".join(line[1:-1])
-            _if = line[0]
-            _then = line[-1]
-            if _if != "if" or _then != "then" or args[0] != '(' or args[-1] != ')':
-                return self.compiler.error_handler(f"Error, the if structure is not well made")
+            ignore_index, ignore_code, tmp_code = check_if_structure(line, self.temporal_code)
+            if type(ignore_index) == str:
+                return self.compiler.error_handler(ignore_index)
 
-            if not self.check_end_if(line):
-                return self.compiler.error_handler(f"Error, the if structure doesn't have an end if statement")
+            self.ignore_index = ignore_index
+            self.ignore_code = ignore_code
+
+            if_structure = IfStructure(tmp_code, self.compiler)
+            self.execute_function = if_structure.execute_if_structure
         else:
             self.ifs_counter += 1
 
+    
+    def check_else_line(self, line:str):
+        if not self.ignore_if_sections:
+            self.if_section_done = True
+            return
+        
+        if self.ifs_counter > 0:
+            return
+        
+        if len(line) > 1:
+            if_line = line[1:]
+            if if_then_else_syntax(if_line):
+                code_line = " ".join(line[2:-1])[1:-1]
+                if self.compiler.solve_equation(code_line):
+                    self.ignore_if_sections = False
+            else:
+                return self.compiler.error_handler("Error, the arguments for the if structure are not well made.")
+        else:
+            self.ignore_if_sections = False
+            
     
     def else_line(self):
         if not self.ignore_if_sections:
@@ -83,10 +81,6 @@ class IfStructure():
         first_line = self.temporal_code.pop(0).split()
         _if_args = " ".join(first_line[1:-1])[1:-1]
 
-        pattern_if = r"^if\s*\(.*?\)\s*then$"
-        pattern_else_if = r"^else\s+if\s*\(.*?\)\s*then$"
-        pattern_else = r"^else$"
-
         result = self.compiler.solve_equation(_if_args)
         if result == None:
             return self.compiler.error_handler("Error, the arguments in the if structure are not well made")
@@ -106,26 +100,19 @@ class IfStructure():
                 if line == "end if":
                     self.ifs_counter -= 1
                     continue
-
-                # Patrón if                
-                if re.fullmatch(pattern_if, line):
-                    self.if_line(line)
-                    continue
-
-                # Patrón else if
-                if re.fullmatch(pattern_else_if, line):
-                    self.else_if_line(line)
-                    continue
-
-                # Patrón else
-                if re.fullmatch(pattern_else, line):
-                    self.else_line()
-                    continue
-
+                
                 formatted_line = line.split(" ")
                 main_command = formatted_line[0]
 
                 if main_command == '':
+                    continue
+
+                if main_command == "if":
+                    self.if_line(line)
+                    continue
+                
+                if main_command == "else":
+                    self.check_else_line(formatted_line)
                     continue
                 
                 if self.ignore_if_sections == False and self.if_section_done == False:
