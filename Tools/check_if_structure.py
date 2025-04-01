@@ -33,12 +33,14 @@ def check_end_if(line:str, temporal_code: list[str]) -> bool:
             
     return False, None, None, None
 
-def check_if_structure(line: str, temporal_code: list[str]):
+def check_if_structure(line: str, temporal_code: list[str], compiler):
+    from Tools.Structures.if_structure import IfStructure
     if not if_then_else_syntax(line):
         return "Error, the if structure is not well made", None, None
     check_end_flag, ignore_index, ignore_code, tmp_code = check_end_if(line, temporal_code)
     if not check_end_flag:
         return "Error, the if structure doesn't have an end if statement", None, None
     else:
-        return ignore_index, ignore_code, tmp_code
+        if_structure = IfStructure(tmp_code, compiler)
+        return ignore_index, ignore_code, if_structure
         

@@ -2,8 +2,9 @@ import re
 import json
 from constants import Routes
 from typing import TYPE_CHECKING
-from Tools.if_structure import IfStructure
+from Tools.Structures.if_structure import IfStructure
 from Tools.check_if_structure import check_if_structure
+from Tools.check_select_structure import check_select_structure
 # from Tools.select_structure import SelectStructure
 
 if TYPE_CHECKING:
@@ -40,7 +41,7 @@ class Compiler():
             "use"   : self.add_libraries,
             "if"    : self.validation_structure,
             "end"   : self.end_command,
-            # "select": self.select_command,
+            "select": self.select_command,
             # "case"  : self.case_command
         }
         
@@ -75,6 +76,11 @@ class Compiler():
     def solve_equation(self, equation: str):
         parsed_variables = {key: value["value"] for key, value in self.variables.items()}
         return eval(equation, {"__builtins__": None}, parsed_variables)
+    
+    def clean_strings(self, string: str) -> str:
+        if type(string) == str:
+            string = string[1:-1] if string[0] == '"' and string[-1] == '"' else string
+        return string
     
     def get_variable_value(self, variable):
         return self.variables[variable]["value"]
@@ -169,42 +175,6 @@ class Compiler():
         
         self.showing_messages(" ".join(map(str, output)))
 
-    def check_end_select(self, line) -> bool:
-        formatted_line = " ".join(line)
-        current_if_index = self.code.index(formatted_line)
-        for i in range(current_if_index, len(self.code)):
-            if self.code[i] == "end select":
-                self.end_select_flag = True
-                self.select_section_done = False
-                self.ignore_select_sections = True
-                return True
-        
-        return False
-    
-    def check_end_if(self, line) -> bool:
-        formatted_line = " ".join(line)
-        current_if_index = self.code.index(formatted_line)
-        if_pile = 0
-        tmp_code: list[str] = []
-        pattern = r"if\s*\(\s*[^()]+\s*\)\s*then"
-
-        for i in range(current_if_index, len(self.code)):
-            tmp_code.append(self.code[i])
-            if re.fullmatch(pattern, self.code[i]):
-                if_pile += 1
-                continue
-
-            if self.code[i] == "end if":
-                if_pile -= 1
-                if if_pile == 0:
-                    self.ignore_index = i+1
-                    self.ignore_code = True
-                    if_structure = IfStructure(tmp_code, self)
-                    self.execute_function = if_structure.execute_if_structure
-                    return True
-                
-        return False
-
     def end_command(self, line):
         reserved_word = line[1]
         args = line[2:]
@@ -223,51 +193,23 @@ class Compiler():
             self.ignore_select_sections = False
             return
         
-    # def select_command(self, line):
-    #     _select = line[0]
-    #     _case = line[1]
-    #     args = line[2:]
-    #     args = " ".join(args)
+    def select_command(self, line):
+        ignore_index, ignore_code, select_structure = check_select_structure(line, self.code, self)
+        if (type(ignore_index)) == str:
+            return self.error_handler(ignore_index)
 
-    #     if _select != "select" or _case != "case" or args[0] != '(' or args[-1] != ')':
-    #         return self.error_handler(f"Error, the 'select case' structure is not well made")
-    #     if not self.end_select_flag:
-    #         if not self.check_end_select(line):
-    #             return self.error_handler(f"Error, the 'select case' structure doesn't have an end select statement")
+        self.ignore_index = ignore_index
+        self.ignore_code = ignore_code
+        self.execute_function = select_structure.execute_select_structure
 
-    #     formatted_args = args[1:-1]
-    #     elements = formatted_args.split()
-        
-    #     if len(elements) > 1:
-    #         initialization_symbol: bool = False
-    #         for element in elements:
-    #             if element == "=":
-    #                 initialization_symbol = True
-    #                 break
-    #         if initialization_symbol:
-    #             return self.error_handler(f"Error, you are usign the '=' operator inside a 'select case' statement")
-
-    #     result = self.formating_operation(elements)
-    #     try:
-    #         expression = eval(result, {"__builtins__": None}, {})
-    #     except SyntaxError:
-    #         return self.error_handler(f"Error, the arguments for the 'select case' structure are not well made")
-    #     except TypeError:
-    #         return self.error_handler(f"Error, the variables used are non existing or mistakenly written in the 'select case' structure")
-    #     if expression:
-    #         self.select_tmp_value = expression
-        
     def validation_structure(self, line):
-        ignore_index, ignore_code, tmp_code = check_if_structure(line, self.code)
+        ignore_index, ignore_code, if_structure = check_if_structure(line, self.code, self)
         if type(ignore_index) == str:
             return self.error_handler(ignore_index)
         
         self.ignore_index = ignore_index
         self.ignore_code = ignore_code
-        
-        if_structure = IfStructure(tmp_code, self)
         self.execute_function = if_structure.execute_if_structure
-
 
     def formating_operation(self, args):
         for i, arg in enumerate(args):

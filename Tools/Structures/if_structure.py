@@ -21,15 +21,14 @@ class IfStructure():
     def if_line(self, line: str):
         if self.ignore_if_sections == False and self.if_section_done == False:
             line = line.split()
-            ignore_index, ignore_code, tmp_code = check_if_structure(line, self.temporal_code)
+            ignore_index, ignore_code, if_structure = check_if_structure(line, self.temporal_code, self.compiler)
             if type(ignore_index) == str:
                 return self.compiler.error_handler(ignore_index)
 
             self.ignore_index = ignore_index
             self.ignore_code = ignore_code
-
-            if_structure = IfStructure(tmp_code, self.compiler)
             self.execute_function = if_structure.execute_if_structure
+            
         else:
             self.ifs_counter += 1
 
@@ -54,28 +53,28 @@ class IfStructure():
             self.ignore_if_sections = False
             
     
-    def else_line(self):
-        if not self.ignore_if_sections:
-            self.if_section_done = True
-            return
+    # def else_line(self):
+    #     if not self.ignore_if_sections:
+    #         self.if_section_done = True
+    #         return
         
-        if self.ifs_counter > 0:
-            return
+    #     if self.ifs_counter > 0:
+    #         return
 
-        self.ignore_if_sections = False
+    #     self.ignore_if_sections = False
     
-    def else_if_line(self, line: str):
-        if not self.ignore_if_sections:
-            self.if_section_done = True
-            return
+    # def else_if_line(self, line: str):
+    #     if not self.ignore_if_sections:
+    #         self.if_section_done = True
+    #         return
         
-        if self.ifs_counter > 0:
-            return
+    #     if self.ifs_counter > 0:
+    #         return
 
-        code_line = line.split()
-        code_line = " ".join(code_line[2:-1])[1:-1]
-        if self.compiler.solve_equation(code_line):
-            self.ignore_if_sections = False
+    #     code_line = line.split()
+    #     code_line = " ".join(code_line[2:-1])[1:-1]
+    #     if self.compiler.solve_equation(code_line):
+    #         self.ignore_if_sections = False
         
     def execute_if_structure(self):
         first_line = self.temporal_code.pop(0).split()

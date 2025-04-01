@@ -5,7 +5,7 @@ import os
 
 def main():
     terminal = "hi"
-    file_name: str = "if_then_else.f90"
+    file_name: str = "file.f90"
     compiler = Compiler(terminal, True)
     file_route = os.path.join(Routes.COMPILER_FILES.value, file_name)
     try:
