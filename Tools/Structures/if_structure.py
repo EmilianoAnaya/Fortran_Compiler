@@ -63,30 +63,6 @@ class IfStructure():
                 return self.compiler.error_handler("Error, the arguments for the if structure are not well made.")
         else:
             self.ignore_if_sections = False
-            
-    
-    # def else_line(self):
-    #     if not self.ignore_if_sections:
-    #         self.if_section_done = True
-    #         return
-        
-    #     if self.ifs_counter > 0:
-    #         return
-
-    #     self.ignore_if_sections = False
-    
-    # def else_if_line(self, line: str):
-    #     if not self.ignore_if_sections:
-    #         self.if_section_done = True
-    #         return
-        
-    #     if self.ifs_counter > 0:
-    #         return
-
-    #     code_line = line.split()
-    #     code_line = " ".join(code_line[2:-1])[1:-1]
-    #     if self.compiler.solve_equation(code_line):
-    #         self.ignore_if_sections = False
         
     def execute_if_structure(self):
         # first_line = self.temporal_code.pop(0).split()
@@ -132,13 +108,12 @@ class IfStructure():
                     self.check_else_line(formatted_line)
                     continue
                 
+                if not self.compiler.line_checker(main_command):
+                    return self.compiler.error_handler(f"Error, the '{main_command}' command doesn't exists")
+                
                 if self.ignore_if_sections == False and self.if_section_done == False:
                     if main_command in self.compiler.control_structures:
                         self.compiler.control_structures[main_command](formatted_line, self.ignore_data)
-                        continue
-                    
-                    if main_command in self.compiler.reserved_words:
-                        self.compiler.reserved_words[main_command](formatted_line)
                         continue
 
                     self.compiler.line_execution(main_command, formatted_line)

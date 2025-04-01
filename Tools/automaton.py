@@ -335,8 +335,22 @@ class Compiler():
             if expression:
                 self.ignore_if_sections = False           
     
+    def line_checker(self, main_command: str) -> bool:
+        if (main_command in self.commands or 
+            main_command in self.data_type or 
+            main_command in self.variables or 
+            main_command in self.control_structures or 
+            main_command in self.reserved_words):
+            return True
+        else:
+            return False
+    
     
     def line_execution(self, main_command: str, formatted_line: str) -> None:  
+        if main_command in self.reserved_words:
+            self.reserved_words[main_command](formatted_line)
+            return
+        
         if main_command in self.commands:
             self.commands[main_command](formatted_line)
             return
@@ -373,10 +387,6 @@ class Compiler():
             if self.ignore_data["ignore_code"] == False:
                 if main_command in self.control_structures:
                     self.control_structures[main_command](formatted_line, self.ignore_data)
-                    continue
-
-                if main_command in self.reserved_words:
-                    self.reserved_words[main_command](formatted_line)
                     continue
 
                 self.line_execution(main_command, formatted_line)
