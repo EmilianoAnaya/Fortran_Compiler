@@ -204,6 +204,8 @@ class TerminalFrame(tk.Frame):
             with open(file_route, "r", encoding="utf-8") as f:
                 lines = [line.strip() for line in f]
 
+            self.compiler.reset_all()
+            self.compiler.ignore_data["code"] = lines
             self.compiler.compile(lines)
                 
         except FileNotFoundError:
