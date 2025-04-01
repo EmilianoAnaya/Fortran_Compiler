@@ -44,9 +44,7 @@ class Compiler():
         
         self.reserved_words : dict = {
             "use"   : self.add_libraries,
-            "if"    : self.validation_structure,
             "end"   : self.end_command,
-            "select": self.select_command,
             # "case"  : self.case_command
         }
         
@@ -92,7 +90,10 @@ class Compiler():
  
     def solve_equation(self, equation: str):
         parsed_variables = {key: value["value"] for key, value in self.variables.items()}
-        return eval(equation, {"__builtins__": None}, parsed_variables)
+        try:
+            return eval(equation, {"__builtins__": None}, parsed_variables)
+        except TypeError:
+            return None
     
     def clean_strings(self, string: str) -> str:
         if type(string) == str:
@@ -333,6 +334,7 @@ class Compiler():
                 return self.error_handler(f"Error, the variables used are non existing or mistakenly written in the if-then-else structure")
             if expression:
                 self.ignore_if_sections = False           
+    
     
     def line_execution(self, main_command: str, formatted_line: str) -> None:  
         if main_command in self.commands:
