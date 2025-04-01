@@ -37,6 +37,11 @@ class Compiler():
             "print*," : self.print_args
         }
 
+        self.control_structures : dict = {
+            "if"    : self.validation_structure,
+            "select": self.select_command
+        }
+        
         self.reserved_words : dict = {
             "use"   : self.add_libraries,
             "if"    : self.validation_structure,
@@ -51,11 +56,17 @@ class Compiler():
 
         self.terminal:TerminalFrame = terminal
         self.compile_error_flag: bool = False
-        self.code: list[str] = None
         
+        self.ignore_data: dict = {
+            "code"              : None,
+            "ignore_code"       : False,
+            "ignore_index"      : -1,
+            "execute_function"  : None
+        }
+        
+        self.code: list[str] = None
         self.ignore_code: bool = False
         self.ignore_index: int = -1
-        self.temporal_code: list[str] = None
         self.execute_function: function = None
 
         self.current_libraries: dict = {}
@@ -69,6 +80,12 @@ class Compiler():
             self.terminal.show_line(msg)
     ####################
     def reset_all(self):
+        self.ignore_data: dict = {
+            "code"              : None,
+            "ignore_code"       : False,
+            "ignore_index"      : -1,
+            "execute_function"  : None
+        }
         self.compile_error_flag: bool = False
         self.current_libraries: dict = {}
         self.variables: dict = {}
@@ -193,23 +210,31 @@ class Compiler():
             self.ignore_select_sections = False
             return
         
-    def select_command(self, line):
-        ignore_index, ignore_code, select_structure = check_select_structure(line, self.code, self)
+    def select_command(self, line, ignore_data):
+        # ignore_index, ignore_code, select_structure = check_select_structure(line, self.code, self)
+        ignore_index, ignore_code, select_structure = check_select_structure(line, ignore_data["code"], self)
         if (type(ignore_index)) == str:
             return self.error_handler(ignore_index)
 
-        self.ignore_index = ignore_index
-        self.ignore_code = ignore_code
-        self.execute_function = select_structure.execute_select_structure
+        # self.ignore_index = ignore_index
+        # self.ignore_code = ignore_code
+        # self.execute_function = select_structure.execute_select_structure
+        ignore_data["ignore_index"] = ignore_index
+        ignore_data["ignore_code"] = ignore_code
+        ignore_data["execute_function"] = select_structure.execute_select_structure
 
-    def validation_structure(self, line):
-        ignore_index, ignore_code, if_structure = check_if_structure(line, self.code, self)
+    def validation_structure(self, line, ignore_data):
+        # ignore_index, ignore_code, if_structure = check_if_structure(line, self.code, self)
+        ignore_index, ignore_code, if_structure = check_if_structure(line, ignore_data["code"], self)
         if type(ignore_index) == str:
             return self.error_handler(ignore_index)
         
-        self.ignore_index = ignore_index
-        self.ignore_code = ignore_code
-        self.execute_function = if_structure.execute_if_structure
+        # self.ignore_index = ignore_index
+        # self.ignore_code = ignore_code
+        # self.execute_function = if_structure.execute_if_structure
+        ignore_data["ignore_index"] = ignore_index
+        ignore_data["ignore_code"] = ignore_code
+        ignore_data["execute_function"] = if_structure.execute_if_structure
 
     def formating_operation(self, args):
         for i, arg in enumerate(args):
@@ -326,9 +351,12 @@ class Compiler():
     
     def compile(self, lines: list[str]):
         for i, line in enumerate(lines):
-            if i == self.ignore_index:
-                self.execute_function()
-                self.ignore_code = False
+            # if i == self.ignore_index:
+            if i == self.ignore_data["ignore_index"]:
+                # self.execute_function()
+                self.ignore_data["execute_function"]()
+                # self.ignore_code = False
+                self.ignore_data["ignore_code"] = False
 
             if self.compile_error_flag:
                 break
@@ -339,7 +367,12 @@ class Compiler():
             if main_command == '':
                 continue
             
-            if self.ignore_code == False:
+            # if self.ignore_code == False:
+            if self.ignore_data["ignore_code"] == False:
+                if main_command in self.control_structures:
+                    self.control_structures[main_command](formatted_line, self.ignore_data)
+                    continue
+
                 if main_command in self.reserved_words:
                     self.reserved_words[main_command](formatted_line)
                     continue

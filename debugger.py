@@ -2,7 +2,6 @@ from Tools.automaton import Compiler
 from constants import WindowColors, Routes
 import os
 
-
 def main():
     terminal = "hi"
     file_name: str = "file.f90"
@@ -13,8 +12,7 @@ def main():
             lines = [line.strip() for line in f]
         
         compiler.reset_all()
-        compiler.code = lines
-        compiler.compile_error_flag = False
+        compiler.ignore_data["code"] = lines
         compiler.compile(lines)
             
     except FileNotFoundError:
