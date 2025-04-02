@@ -120,13 +120,12 @@ class SelectStructure():
                     self.case_line(line)
                     continue
 
+                if not self.compiler.line_checker(main_command):
+                    return self.compiler.error_handler(f"Error, the '{main_command}' command doesn't exists")
+                
                 if self.ignore_select_sections == False and self.select_section_done == False:
                     if main_command in self.compiler.control_structures:
                         self.compiler.control_structures[main_command](formatted_line, self.ignore_data)
-                        continue
-                    
-                    if main_command in self.compiler.reserved_words:
-                        self.compiler.reserved_words[main_command](formatted_line)
                         continue
 
                     self.compiler.line_execution(main_command, formatted_line)

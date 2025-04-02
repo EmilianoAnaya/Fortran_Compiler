@@ -24,9 +24,13 @@ def check_end_select(line: list[str], temporal_code: list[str]) -> bool:
     for i in range(current_select_index, len(temporal_code)):
         tmp_code.append(temporal_code[i])
         code_line = temporal_code[i].split()
+        if temporal_code[i] == '':
+            continue
+
         if code_line[0] == pattern:
             select_pile += 1
             continue
+        
         if temporal_code[i] == "end select":
             select_pile -= 1
             if select_pile == 0:

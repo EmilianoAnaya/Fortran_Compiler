@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 from Tools.Structures.if_structure import IfStructure
 from Tools.check_if_structure import check_if_structure
 from Tools.check_select_structure import check_select_structure
+from Tools.check_do_structure import check_do_structure
 # from Tools.select_structure import SelectStructure
 
 if TYPE_CHECKING:
@@ -39,7 +40,8 @@ class Compiler():
 
         self.control_structures : dict = {
             "if"    : self.validation_structure,
-            "select": self.select_command
+            "select": self.select_command,
+            "do"    : self.do_structure
         }
         
         self.reserved_words : dict = {
@@ -99,6 +101,17 @@ class Compiler():
         if type(string) == str:
             string = string[1:-1] if string[0] == '"' and string[-1] == '"' else string
         return string
+    
+    def check_existing_variable(self, variable):
+        if variable in self.variables:
+            return True
+        return False
+    
+    def increment_value(self, variable: str, increment: int) -> None:
+        self.variables[variable]["value"] = self.solve_equation(f"{self.variables[variable]["value"]} + {increment}")
+    
+    def set_variable_value(self, variable, value):
+        self.variables[variable]["value"] = value
     
     def get_variable_value(self, variable):
         return self.variables[variable]["value"]
@@ -211,6 +224,15 @@ class Compiler():
             self.ignore_select_sections = False
             return
         
+    def do_structure(self, line, ignore_data):
+        ignore_index, ignore_code, do_structure = check_do_structure(line, ignore_data["code"], self)
+        if (type(ignore_index)) == str:
+            return self.error_handler(ignore_index)
+
+        ignore_data["ignore_index"] = ignore_index
+        ignore_data["ignore_code"] = ignore_code
+        ignore_data["execute_function"] = do_structure.execute_select_structure
+    
     def select_command(self, line, ignore_data):
         # ignore_index, ignore_code, select_structure = check_select_structure(line, self.code, self)
         ignore_index, ignore_code, select_structure = check_select_structure(line, ignore_data["code"], self)
@@ -335,8 +357,22 @@ class Compiler():
             if expression:
                 self.ignore_if_sections = False           
     
+    def line_checker(self, main_command: str) -> bool:
+        if (main_command in self.commands or 
+            main_command in self.data_type or 
+            main_command in self.variables or 
+            main_command in self.control_structures or 
+            main_command in self.reserved_words):
+            return True
+        else:
+            return False
+    
     
     def line_execution(self, main_command: str, formatted_line: str) -> None:  
+        if main_command in self.reserved_words:
+            self.reserved_words[main_command](formatted_line)
+            return
+        
         if main_command in self.commands:
             self.commands[main_command](formatted_line)
             return
@@ -373,10 +409,6 @@ class Compiler():
             if self.ignore_data["ignore_code"] == False:
                 if main_command in self.control_structures:
                     self.control_structures[main_command](formatted_line, self.ignore_data)
-                    continue
-
-                if main_command in self.reserved_words:
-                    self.reserved_words[main_command](formatted_line)
                     continue
 
                 self.line_execution(main_command, formatted_line)

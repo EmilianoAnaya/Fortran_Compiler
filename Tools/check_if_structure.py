@@ -21,9 +21,13 @@ def check_end_if(line:str, temporal_code: list[str]) -> bool:
 
     for i in range(current_if_index, len(temporal_code)):
         tmp_code.append(temporal_code[i])
+        if temporal_code[i] == '':
+            continue
+
         if re.fullmatch(pattern, temporal_code[i][:2]):
             if_pile += 1
             continue
+        
         if temporal_code[i] == "end if":
             if_pile -= 1
             if if_pile == 0:
