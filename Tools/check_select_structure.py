@@ -30,6 +30,7 @@ def check_end_select(line: list[str], temporal_code: list[str]) -> bool:
         if code_line[0] == pattern:
             select_pile += 1
             continue
+        
         if temporal_code[i] == "end select":
             select_pile -= 1
             if select_pile == 0:
