@@ -56,18 +56,10 @@ class DoStructure():
                     break
 
                 if not self.ignore_data["ignore_code"]:
-                    if line == "end do":
-                        self.do_counter  -= 1
-                        continue
-
                     formatted_line = line.split(" ")
                     main_command = formatted_line[0]
 
                     if main_command == '':
-                        continue
-
-                    if main_command == "do":
-                        self.do_line(formatted_line)
                         continue
                     
                     if not self.compiler.line_checker(main_command):
