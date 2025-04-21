@@ -49,6 +49,10 @@ class Compiler():
             "end"   : self.end_command,
             # "case"  : self.case_command
         }
+
+        self.words_for_structures: list = [
+            "case"
+        ]
         
         # Debug Tools
         self.testing_flag = Testing
@@ -337,8 +341,6 @@ class Compiler():
         operation = line[1]
         args = line[2:]
         if operation == "=":
-            if len(line) > 3:
-                return self.error_handler("The initialization has too many arguments incorrect")
             expression = " ".join(args)
             if self.is_math_operation(expression):
                 result, flag = self.parse(expression, args)
@@ -368,7 +370,8 @@ class Compiler():
             main_command in self.data_type or 
             main_command in self.variables or 
             main_command in self.control_structures or 
-            main_command in self.reserved_words):
+            main_command in self.reserved_words or
+            main_command in self.words_for_structures):
             return True
         else:
             return False
