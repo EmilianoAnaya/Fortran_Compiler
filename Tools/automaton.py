@@ -49,6 +49,10 @@ class Compiler():
             "end"   : self.end_command,
             # "case"  : self.case_command
         }
+
+        self.words_for_structures: list = [
+            "case"
+        ]
         
         # Debug Tools
         self.testing_flag = Testing
@@ -92,6 +96,10 @@ class Compiler():
  
     def solve_equation(self, equation: str):
         parsed_variables = {key: value["value"] for key, value in self.variables.items()}
+        # parsed_variables = {}
+        # for key, value in self.variables.items():
+            # parsed_variables[key] = self.data_type[self.variables[key]["data_type"]](value["value"])
+            # print(self.data_type[self.variables[key]["data_type"]])
         try:
             return eval(equation, {"__builtins__": None}, parsed_variables)
         except TypeError:
@@ -362,7 +370,8 @@ class Compiler():
             main_command in self.data_type or 
             main_command in self.variables or 
             main_command in self.control_structures or 
-            main_command in self.reserved_words):
+            main_command in self.reserved_words or
+            main_command in self.words_for_structures):
             return True
         else:
             return False
