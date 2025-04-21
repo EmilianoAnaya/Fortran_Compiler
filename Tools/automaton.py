@@ -92,6 +92,10 @@ class Compiler():
  
     def solve_equation(self, equation: str):
         parsed_variables = {key: value["value"] for key, value in self.variables.items()}
+        # parsed_variables = {}
+        # for key, value in self.variables.items():
+            # parsed_variables[key] = self.data_type[self.variables[key]["data_type"]](value["value"])
+            # print(self.data_type[self.variables[key]["data_type"]])
         try:
             return eval(equation, {"__builtins__": None}, parsed_variables)
         except TypeError:
@@ -333,6 +337,8 @@ class Compiler():
         operation = line[1]
         args = line[2:]
         if operation == "=":
+            if len(line) > 3:
+                return self.error_handler("The initialization has too many arguments incorrect")
             expression = " ".join(args)
             if self.is_math_operation(expression):
                 result, flag = self.parse(expression, args)

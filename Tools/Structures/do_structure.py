@@ -69,6 +69,7 @@ class DoStructure():
                         self.compiler.control_structures[main_command](formatted_line, self.ignore_data)
                         continue
 
+                    print("Error desde do")
                     self.compiler.line_execution(main_command, formatted_line)
 
             if self.compiler.compile_error_flag:
