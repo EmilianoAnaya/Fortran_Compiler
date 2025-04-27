@@ -17,6 +17,14 @@ def do_line_syntax(line):
         return False
     
     _do = line[0]
+    if line[1] == "while":
+        expression: str = " ".join(line[2:])
+
+        if expression[0] == "(" and expression[-1] == ")":
+            return True
+        else:
+            return False
+
     operation: list[str] = (" ".join(line[1:4]))
     end = line[4]
 

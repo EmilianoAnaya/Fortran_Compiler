@@ -51,7 +51,8 @@ class Compiler():
         }
 
         self.words_for_structures: list = [
-            "case"
+            "case",
+            "else"
         ]
         
         # Debug Tools
@@ -239,7 +240,7 @@ class Compiler():
 
         ignore_data["ignore_index"] = ignore_index
         ignore_data["ignore_code"] = ignore_code
-        ignore_data["execute_function"] = do_structure.execute_select_structure
+        ignore_data["execute_function"] = do_structure.execute_do_structure
     
     def select_command(self, line, ignore_data):
         # ignore_index, ignore_code, select_structure = check_select_structure(line, self.code, self)
