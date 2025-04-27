@@ -1,11 +1,10 @@
-integer :: beta, alpha, zeta, mi_numero
-character :: mi_string
+integer :: beta, alpha, zeta, mi_numero, mi_select
 
-mi_string = "buenas"
-beta = 70
+beta = 40
 alpha = 50
 zeta = 20
 mi_numero = 70
+mi_select = 20
 
 print*, "Empieza el if"
 
@@ -27,6 +26,19 @@ else if (beta < 10 * 5) then
             case (70)
                 print*, "El número es 70"
             case (90)
+                print*,
+                print*, "Evaluando 'select' anidado"
+                select case (mi_select)
+                case (10)
+                    print*, "'mi_select' es 10"
+                case (20)
+                    print*, "'mi_select' es 20"
+                case default
+                    print*, "No sé que es 'mi_select'"
+                end select
+                print*, "Se acabo el select anidado"
+                print*,
+                
                 print*, "El número es 90"
                 if (90 > beta) then
                     print*, "El número es mayor que 'beta'"
