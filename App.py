@@ -22,7 +22,7 @@ class App(tk.Tk):
         self.edit_menu: tk.Menu = MenuButton(self, self.edit_menu_commands)
 
         self.compile_menu_commands: list[tuple] = [("Lexic Analisys",None), ("Syntactic Analisys", None),("Semantic Analisys", None), ("Intermediate Code Generation",None),
-                                 ("Object Code", None)]
+                                ("Object Code", None)]
         self.compile_menu: tk.Menu = MenuButton(self, self.compile_menu_commands)
 
         self.help_menu_commands: list[tuple] = [("Libraries",None,["stdio.h","conio.h"]), ("Void main", None)]
@@ -46,8 +46,8 @@ class App(tk.Tk):
         self.archives_bar_frame.place(x=0,y=0)
 
         self.terminal_frame: tk.Frame = TerminalFrame(self, 
-                                                      self.archives_bar_frame, 
-                                                      self.file_editor_frame)
+                                                    self.archives_bar_frame, 
+                                                    self.file_editor_frame)
         self.terminal_frame.place(x=196,y=511)
 
         self.file_editor_frame.set_terminal_frame(self.terminal_frame)

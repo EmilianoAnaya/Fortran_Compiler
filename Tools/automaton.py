@@ -1,4 +1,5 @@
 import re
+import ast
 import json
 from constants import Routes
 from typing import TYPE_CHECKING
@@ -19,6 +20,13 @@ class Compiler():
             "complex" : complex,
             "character" : str,
             "logical" : bool
+        }
+
+        self.array_regex_type: dict = {
+            "integer" : r'^\[\s*(-?\d+\s*(,\s*-?\d+\s*)*)?\]$',
+            "real" : r'^\[\s*(-?\d+\.\d+\s*(,\s*-?\d+\.\d+\s*)*)?\]$',
+            "character" : r'^\[\s*(".*?"\s*(,\s*".*?"\s*)*)?\]$',
+            "logical" : r'^\[\s*(true|false)\s*(,\s*(true|false)\s*)*\]$'
         }
 
         self.operands: dict = {
@@ -47,7 +55,6 @@ class Compiler():
         self.reserved_words : dict = {
             "use"   : self.add_libraries,
             "end"   : self.end_command,
-            # "case"  : self.case_command
         }
 
         self.words_for_structures: list = [
@@ -94,13 +101,12 @@ class Compiler():
         self.compile_error_flag: bool = False
         self.current_libraries: dict = {}
         self.variables: dict = {}
- 
+
+    def check_for_arrays(self, equation):
+        ...
+    
     def solve_equation(self, equation: str):
         parsed_variables = {key: value["value"] for key, value in self.variables.items()}
-        # parsed_variables = {}
-        # for key, value in self.variables.items():
-            # parsed_variables[key] = self.data_type[self.variables[key]["data_type"]](value["value"])
-            # print(self.data_type[self.variables[key]["data_type"]])
         try:
             return eval(equation, {"__builtins__": None}, parsed_variables)
         except TypeError:
@@ -167,7 +173,7 @@ class Compiler():
                         self.current_libraries[library] = data[main_library][library] 
                     except KeyError:
                         return self.error_handler(f"Error, The library {library} does not exists")
-                                      
+                    
         elif len(line) == 2:
             with open(Routes.LIBRARIES.value, "r", encoding="utf-8") as file:
                 data = json.load(file)
@@ -321,14 +327,26 @@ class Compiler():
         if not double_colon == "::":
             return self.error_handler("Initialization Error")
         
-        args = line[2:]
-        formatted_args = [arg.replace(",","") for arg in args]
+        args: str = line[2:]
+        formatted_args: list[str] = [arg.replace(",","") for arg in args]
 
         for arg in formatted_args:
             if not arg in self.variables:
-                self.variables[arg] = {"data_type" : data_type, "value" : None}
+                arg_index = arg.find("(")
+                if arg_index != -1:
+                    if not arg[-1] == ")":
+                        return self.error_handler(f"Error, the array is not initialized correctly")
+                    variable_name: str = arg[:arg_index]
+                    size: str = arg[arg_index+1:-1]
+
+                    if size == 0 or not size.isdecimal():
+                        return self.error_handler(f"Error, the array '{variable_name}' is initialized incorrectly")
+        
+                    self.variables[variable_name] = {"data_type" : data_type, "value" : [None]*int(size), "size" : int(size), "is_list" : True}
+                else:
+                    self.variables[arg] = {"data_type" : data_type, "value" : None, "size" : 1, "is_list" : False}
             else:
-                return self.error_handler(f"The {arg} variable has been initialized before has a {self.variables[arg]["data_type"]}")
+                return self.error_handler(f"The {arg} variable has been initialized before as a {self.variables[arg]["data_type"]}")
     
     def is_math_operation(self, expression):
         operator_detected = False
@@ -337,6 +355,63 @@ class Compiler():
                 operator_detected = True
         return operator_detected
     
+    def is_array(self, main_variable: str) -> bool:
+        variable: str = main_variable
+        bracket_position: int = main_variable.find("(")
+        if bracket_position != -1:
+            variable = variable[:bracket_position]
+
+        if variable in self.variables and self.variables[variable]['is_list'] == True:
+            return True
+        
+        return False
+    
+    def check_array_syntax(self, array: str) -> bool:
+        bracket_position: int = array.find("(")
+        if bracket_position != -1: 
+            if array[-1] == ")":
+                variable_name = array[:bracket_position]
+                array_index = array[bracket_position+1:-1]
+                if array_index.isdecimal():
+                    if (int(array_index) <= self.variables[variable_name]['size']-1 and
+                        int(array_index) >= 0):
+                        return True
+        else:
+            if not array[-1] == ")":
+                return True
+        return False
+
+    def set_array_data(self, array_index: int, array_name: str, expression: str):
+        array_data_type = self.variables[array_name]["data_type"]
+        if array_index != -1:
+            try:
+                self.variables[array_name]["value"][array_index] = self.data_type[array_data_type](expression)
+            except ValueError:
+                return self.error_handler(f"Error, the data type for {expression} array it's different from the array itself")
+        else:
+            pattern = self.array_regex_type[array_data_type]
+            try:
+                if re.match(pattern, expression):
+                    expression_list = ast.literal_eval(expression)
+                    if len(expression_list) != self.variables[array_name]["size"]:
+                        return self.error_handler("The array you are trying to save it's not the same size as the stipulated in the variable")
+                    self.variables[array_name]["value"] = expression_list
+                else:
+                    self.error_handler("The syntax of the array you're trying to save is incorrect and/or the data type of the elements it's different from the array")
+            except TypeError:
+                self.error_handler(f"Error, you're trying to save an element to the whole array '{array_name}' instead of one space in it")
+    
+    def get_array_data(self, array: str) -> tuple[int, str]:
+        bracket_position: int = array.find("(")
+        if bracket_position != -1:
+            array_index: int = int(array[bracket_position+1:-1])
+            variable_name: str = array[:bracket_position]
+        else:
+            array_index: int = -1
+            variable_name: str = array
+
+        return array_index, variable_name
+    
     def check_operation(self, line):
         main_variable = line[0]
         operation = line[1]
@@ -344,27 +419,38 @@ class Compiler():
         if operation == "=":
             expression = " ".join(args)
             if self.is_math_operation(expression):
-                result, flag = self.parse(expression, args)
-                if not flag:
-                    return
-                expression = eval(result, {"__builtins__": None}, {})
+                expression = self.solve_equation(expression)
+                if expression == None:
+                    return self.error_handler("The integrity of the operation is unclear")
+                # result, flag = self.parse(expression, args)
+                # if not flag:
+                    # return
+
+            # Validar si la expresion no es Boleana.
             if expression not in ("False", "True"):
-                try: 
-                    self.variables[main_variable]["value"] = self.data_type[self.variables[main_variable]["data_type"]](expression)
-                except ValueError:
-                    return self.error_handler(f"Error, the data type for {main_variable} value it's different for the variable itself")
+                if self.is_array(main_variable):
+                    if self.check_array_syntax(main_variable):
+                        array_index, array_name = self.get_array_data(main_variable)
+                        self.set_array_data(array_index, array_name, expression)
+                    else:
+                        return self.error_handler("Error, the syntaxis of the array is not well made")
+                else:
+                    try: 
+                        self.variables[main_variable]["value"] = self.data_type[self.variables[main_variable]["data_type"]](expression)
+                    except ValueError:
+                        return self.error_handler(f"Error, the data type for {main_variable} value it's different for the variable itself")
             else:
                 self.variables[main_variable]["value"] = expression.capitalize()
-        else:
-            result = self.formating_operation(line)
-            try:
-                expression = eval(result, {"__builtins__": None}, {})
-            except SyntaxError:
-                return self.error_handler(f"Error, the arguments for the if structure are not well made")
-            except TypeError:
-                return self.error_handler(f"Error, the variables used are non existing or mistakenly written in the if-then-else structure")
-            if expression:
-                self.ignore_if_sections = False           
+        # else:
+        #     result = self.formating_operation(line)
+        #     try:
+        #         expression = eval(result, {"__builtins__": None}, {})
+        #     except SyntaxError:
+        #         return self.error_handler(f"Error, the arguments for the if structure are not well made")
+        #     except TypeError:
+        #         return self.error_handler(f"Error, the variables used are non existing or mistakenly written in the if-then-else structure")
+        #     if expression:
+        #         self.ignore_if_sections = False           
     
     def line_checker(self, main_command: str) -> bool:
         if (main_command in self.commands or 
@@ -391,7 +477,7 @@ class Compiler():
             self.variable_initialization(formatted_line)
             return
         
-        if main_command in self.variables:
+        if main_command in self.variables or self.is_array(main_command):
             self.check_operation(formatted_line)
             return
         
@@ -422,3 +508,5 @@ class Compiler():
                     continue
 
                 self.line_execution(main_command, formatted_line)
+
+        print(self.variables)

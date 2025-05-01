@@ -83,7 +83,7 @@ class SelectStructure():
         
         result = self.compiler.solve_equation(_select_args)
         if result == None:
-            return self.compiler.error_handler("Error, the arguments in the select structure are not wel made")
+            return self.compiler.error_handler("Error, the arguments in the select structure are not well made")
         else:
             result = self.compiler.clean_strings(result)
             self.select_value_structure = result
