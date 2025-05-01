@@ -1,11 +1,12 @@
-integer :: array1(10), i, j
+integer :: array1(10), j, i
 real :: array2(5)
 character :: hola
 
-j = 15
-i = (j + 15) * 2
+j = 14 * 2
 
 array1 = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-array1(0) = i + j
-array1(9) = i - j
-array1(1) = i * j
+do i = 0, 9
+    print*, "Valor de 'i':", i
+    array1(i) = i * 2
+end do
+print*,

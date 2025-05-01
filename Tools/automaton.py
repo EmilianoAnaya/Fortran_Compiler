@@ -102,10 +102,10 @@ class Compiler():
         self.current_libraries: dict = {}
         self.variables: dict = {}
 
-    def check_for_arrays(self, equation):
+    def check_for_arrays(self, equation: str) -> str:
         ...
     
-    def solve_equation(self, equation: str):
+    def solve_equation(self, equation: str, msg=None):
         parsed_variables = {key: value["value"] for key, value in self.variables.items()}
         try:
             return eval(equation, {"__builtins__": None}, parsed_variables)
@@ -126,7 +126,7 @@ class Compiler():
         self.variables[variable]["value"] = self.solve_equation(f"{self.variables[variable]["value"]} + {increment}")
     
     def set_variable_value(self, variable, value):
-        self.variables[variable]["value"] = value
+        self.variables[variable]["value"] = int(value)
     
     def get_variable_value(self, variable):
         return self.variables[variable]["value"]
@@ -366,12 +366,26 @@ class Compiler():
         
         return False
     
+    def is_integer(self, variable_name: str) -> bool:
+        if self.variables[variable_name]["data_type"] == "integer":
+            return True
+        return False
+    
+    def is_variable(self, array_index: str) -> str:
+        if array_index.isdecimal():
+            return array_index
+        if array_index in self.variables:
+            if self.is_integer(array_index):
+                return str(self.variables[array_index]["value"])
+        return str(-1)
+
     def check_array_syntax(self, array: str) -> bool:
         bracket_position: int = array.find("(")
         if bracket_position != -1: 
             if array[-1] == ")":
                 variable_name = array[:bracket_position]
                 array_index = array[bracket_position+1:-1]
+                array_index = self.is_variable(array_index)
                 if array_index.isdecimal():
                     if (int(array_index) <= self.variables[variable_name]['size']-1 and
                         int(array_index) >= 0):
@@ -404,7 +418,8 @@ class Compiler():
     def get_array_data(self, array: str) -> tuple[int, str]:
         bracket_position: int = array.find("(")
         if bracket_position != -1:
-            array_index: int = int(array[bracket_position+1:-1])
+            array_index = array[bracket_position+1:-1]
+            array_index = int(self.is_variable(array_index))
             variable_name: str = array[:bracket_position]
         else:
             array_index: int = -1
@@ -458,7 +473,8 @@ class Compiler():
             main_command in self.variables or 
             main_command in self.control_structures or 
             main_command in self.reserved_words or
-            main_command in self.words_for_structures):
+            main_command in self.words_for_structures or
+            self.is_array):
             return True
         else:
             return False

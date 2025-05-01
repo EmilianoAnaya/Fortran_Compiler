@@ -49,6 +49,9 @@ class DoStructure():
 
         if not self.compiler.check_existing_variable(variable):
             return self.compiler.error_handler("Error, the variable to use in the do structure is not yet initialized")
+        
+        if not self.compiler.is_integer(variable):
+            return self.compiler.error_handler(f"Error, the variable '{variable}' is not an integer")
 
         self.compiler.set_variable_value(variable, value_for_variable)
 
