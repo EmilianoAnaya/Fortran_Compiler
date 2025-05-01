@@ -192,6 +192,12 @@ class Compiler():
         output: list[str] = []
         for arg in args:
             arg = arg.replace(",","")
+
+            if self.is_array(arg):
+                if self.check_array_syntax(arg):
+                    array_index, array_name = self.tokenize_array(arg)
+                    output.append(self.get_array_data(array_name, array_index))
+                    continue
             
             if arg in self.variables:
                 output.append(self.get_variable_value(arg))
@@ -415,7 +421,14 @@ class Compiler():
             except TypeError:
                 self.error_handler(f"Error, you're trying to save an element to the whole array '{array_name}' instead of one space in it")
     
-    def get_array_data(self, array: str) -> tuple[int, str]:
+    def get_array_data(self, array_name: str, array_index: int = -1):
+        if array_index != -1:
+            return self.variables[array_name]["value"][array_index]
+        array_value = self.variables[array_name]["value"]
+        array_value = " ".join(str(value) for value in array_value)
+        return array_value
+    
+    def tokenize_array(self, array: str) -> tuple[int, str]:
         bracket_position: int = array.find("(")
         if bracket_position != -1:
             array_index = array[bracket_position+1:-1]
@@ -445,7 +458,7 @@ class Compiler():
             if expression not in ("False", "True"):
                 if self.is_array(main_variable):
                     if self.check_array_syntax(main_variable):
-                        array_index, array_name = self.get_array_data(main_variable)
+                        array_index, array_name = self.tokenize_array(main_variable)
                         self.set_array_data(array_index, array_name, expression)
                     else:
                         return self.error_handler("Error, the syntaxis of the array is not well made")
@@ -474,7 +487,7 @@ class Compiler():
             main_command in self.control_structures or 
             main_command in self.reserved_words or
             main_command in self.words_for_structures or
-            self.is_array):
+            self.is_array(main_command)):
             return True
         else:
             return False
@@ -524,5 +537,3 @@ class Compiler():
                     continue
 
                 self.line_execution(main_command, formatted_line)
-
-        print(self.variables)

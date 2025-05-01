@@ -5,8 +5,9 @@ character :: hola
 j = 14 * 2
 
 array1 = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+print*, "Arreglo 'array1' inicial:", array1
 do i = 0, 9
-    print*, "Valor de 'i':", i
     array1(i) = i * 2
+    print*, "Posición", i, "Cambia a:", array1(i)
 end do
-print*,
+print*, "Arreglo 'array1' final:", array1
