@@ -206,7 +206,10 @@ class TerminalFrame(tk.Frame):
 
             self.compiler.reset_all()
             self.compiler.ignore_data["code"] = lines
-            self.compiler.compile(lines)
+
+            program_name: str = file_name.replace(".f90", "")
+
+            self.compiler.compile(lines, program_name)
                 
         except FileNotFoundError:
             self.show_error_msg(["file_not_found"])

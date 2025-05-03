@@ -532,8 +532,31 @@ class Compiler():
         
         return self.error_handler(f"Error, '{main_command}' command used is non existing")       
     
-    def compile(self, lines: list[str]):
-        for i, line in enumerate(lines):
+    def check_program_line(self, line: str, program_name: str) -> bool:
+        tokenized_line = line.split()
+        if len(tokenized_line) != 2:
+            return False
+        
+        line_program = tokenized_line[0]
+        line_name = tokenized_line[1]
+
+        if line_program != "program" or line_name != program_name:
+            return False
+        
+        return True
+    
+    def get_main_program(self, code: list[str], program_name: str) -> list[str]:
+        end_line = f"end program {program_name}"
+        if end_line in code:
+            print("hi")
+    
+    def compile(self, lines: list[str], program_name: str):
+        if not self.check_program_line(lines.pop(0), program_name):
+            return self.error_handler("Error, the code has an incorrect name in the program line or the line has an incorrect syntaxis")
+        
+        main_code = self.get_main_program(lines, program_name)
+        
+        for i, line in enumerate(main_code):
             # if i == self.ignore_index:
             if i == self.ignore_data["ignore_index"]:
                 # self.execute_function()
