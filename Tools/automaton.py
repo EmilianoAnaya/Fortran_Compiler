@@ -102,15 +102,26 @@ class Compiler():
         self.current_libraries: dict = {}
         self.variables: dict = {}
 
-    def check_for_arrays(self, equation: str) -> str:
-        ...
+    # def check_for_arrays(self, equation: str) -> str:
+    #     ...
     
     def solve_equation(self, equation: str, msg=None):
+        if msg != None:
+            print(msg)
         parsed_variables = {key: value["value"] for key, value in self.variables.items()}
+
+        equation = str(equation)
+        equation = equation.replace("(","[").replace(")","]")
+        
         try:
             return eval(equation, {"__builtins__": None}, parsed_variables)
         except TypeError:
-            return None
+            self.showing_messages("The data type of the expressions used are different from each other")
+        except SyntaxError:
+            self.showing_messages(f"The syntaxis of the expression '{equation}' is wrongly used")
+        except IndexError:
+            self.showing_messages(f"Error, it was tried to access to an index which the array doesn't have")
+        return None
     
     def clean_strings(self, string: str) -> str:
         if type(string) == str:
@@ -408,9 +419,13 @@ class Compiler():
                 self.variables[array_name]["value"][array_index] = self.data_type[array_data_type](expression)
             except ValueError:
                 return self.error_handler(f"Error, the data type for {expression} array it's different from the array itself")
+            except TypeError:
+                return self.error_handler(f"Error, it was tried to set a list in a position when the argument must be a string, a bytes-like object or a real number, not 'list' ")
+
         else:
             pattern = self.array_regex_type[array_data_type]
             try:
+                expression = str(self.solve_equation(expression))
                 if re.match(pattern, expression):
                     expression_list = ast.literal_eval(expression)
                     if len(expression_list) != self.variables[array_name]["size"]:
@@ -446,10 +461,15 @@ class Compiler():
         args = line[2:]
         if operation == "=":
             expression = " ".join(args)
-            if self.is_math_operation(expression):
-                expression = self.solve_equation(expression)
-                if expression == None:
-                    return self.error_handler("The integrity of the operation is unclear")
+
+            expression = self.solve_equation(expression)
+            if expression == None:
+                return self.error_handler("The integrity of the operation is unclear")
+            
+            # if self.is_math_operation(expression):
+            #   expression = self.solve_equation(expression)
+            #     if expression == None:
+            #         return self.error_handler("The integrity of the operation is unclear")
                 # result, flag = self.parse(expression, args)
                 # if not flag:
                     # return
