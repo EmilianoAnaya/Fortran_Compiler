@@ -31,10 +31,10 @@ end program functions_example
 
 integer function sumar(a, b)
     integer :: a, b
-    suma = a + b
+    sumar = a + b
 end function sumar
 
-real function resta(a, b)
+real function restar()
     real :: a, b
-    resta = a - b
+    restar = a - b
 end function restar

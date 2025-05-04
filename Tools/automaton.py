@@ -560,20 +560,92 @@ class Compiler():
 
         return main_code
 
-    def save_functions(self, lines: list[str]): 
-        function_begin: str = None
-        function_end: str = None
+    def count_num_params(self, params: str) -> int:
+        formatted_params = params[1:-1].strip()
+        
+        if not formatted_params:
+            return 0
+        
+        elements = [e.strip() for e in formatted_params.split(',')]
 
-        for i, line in enumerate(lines):
+        return len(elements)
+    
+    def check_function_syntaxis(self, tokenized_line: list[str]) -> tuple:
+        function_word: str = tokenized_line[1]
+        function_name_params: str = " ".join(tokenized_line[2:])
+
+        params_pattern = r'^\(\s*(\w+(, \w+)*)?\s*\)$'
+        name_pattern = r'^[a-zA-Z_]\w*$'
+        
+        try:
+            function_name, function_params = function_name_params.split("(")
+            function_params = "(" + function_params
+
+            if function_word != "function" or not re.match(name_pattern, function_name) or not re.match(params_pattern, function_params):
+                return False, None, None
+            
+            num_params: int = self.count_num_params(function_params)
+            return True, function_name, num_params
+        
+        except ValueError:
+            return False, None, None
+    
+    def save_functions_data(self, lines: list[str], start_index: int, function_name: str, num_params: int, data_type: str) -> bool:
+        print(start_index, function_name, num_params)
+        stop_line: str = f"end function {function_name}"
+        code_function: list[str] = []
+
+        end_line_found: bool = False
+        for i in range(start_index+1, len(lines)):
+            line: str = lines[i]
+
+            if line == '':
+                continue
+
+            if line != stop_line:
+                code_function.append(line)
+                continue
+            
+            end_line_found = True
+            end_line_index = i
+            break
+        
+        if not end_line_found:
+            return False
+        
+        last_line: list[str] = code_function[-1].split()
+        return_name: str = last_line[0]
+
+        if return_name != function_name:
+            return False
+        
+        self.functions[function_name] = {
+            "code" : code_function,
+            "data_type" : data_type,
+            "num_params" : num_params
+            # received_data
+            # return_data
+        }
+        return True
+
+    def check_for_functions(self, lines: list[str]) -> bool: 
+        for index, line in enumerate(lines):
             if line == "":
                 continue
 
-            tokenized_line = line.split()
-            data_type = tokenized_line[0]
+            tokenized_line: list[str] = line.split()
+            function_data_type: str = tokenized_line[0]
 
-            if data_type in self.data_type:
-                ...
-    
+            if function_data_type in self.data_type:
+                error_flag, function_name, num_params = self.check_function_syntaxis(tokenized_line)
+                if not error_flag:
+                    continue
+                
+                if not self.save_functions_data(lines, index, function_name, num_params, function_data_type):
+                    return True
+
+        return False
+
     def compile(self, lines: list[str], program_name: str):
         if not self.check_program_line(lines.pop(0), program_name):
             return self.error_handler("Error, the code has an incorrect name in the program line or the line has an incorrect syntaxis")
@@ -583,10 +655,9 @@ class Compiler():
             return self.error_handler("Error when starting the program. The Code doesn't have an 'end program' line or its syntax is wrong.")
         
         self.ignore_data["code"] = main_code
-        self.save_functions(lines)
-        print(self.functions)
+        if self.check_for_functions(lines):
+            return self.error_handler("Error when checking for functions. It appears a function is not well made, try checking all the structure for any syntaxis problems.")
 
-        return
         for i, line in enumerate(main_code):
             # if i == self.ignore_index:
             if i == self.ignore_data["ignore_index"]:
@@ -611,3 +682,5 @@ class Compiler():
                     continue
 
                 self.line_execution(main_command, formatted_line)
+
+        print(self.functions)
