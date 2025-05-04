@@ -28,3 +28,13 @@ program functions_example
     print*, "Arreglo 'array2':", array2
 
 end program functions_example
+
+integer function sumar(a, b)
+    integer :: a, b
+    suma = a + b
+end function sumar
+
+real function resta(a, b)
+    real :: a, b
+    resta = a - b
+end function restar

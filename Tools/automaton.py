@@ -83,6 +83,7 @@ class Compiler():
 
         self.current_libraries: dict = {}
         self.variables: dict = {}
+        self.functions: dict = {}
     
     # Debug Functions #
     def showing_messages(self, msg):
@@ -546,16 +547,46 @@ class Compiler():
         return True
     
     def get_main_program(self, code: list[str], program_name: str) -> list[str]:
-        end_line = f"end program {program_name}"
-        if end_line in code:
-            print("hi")
+        end_line: str = f"end program {program_name}"
+        if not end_line in code:
+            return None
+        
+        main_code: list[str] = []
+        end_line_index: int = code.index(end_line)
+        for _ in range(end_line_index):
+            main_code.append(code.pop(0))
+        
+        code.remove(end_line)
+
+        return main_code
+
+    def save_functions(self, lines: list[str]): 
+        function_begin: str = None
+        function_end: str = None
+
+        for i, line in enumerate(lines):
+            if line == "":
+                continue
+
+            tokenized_line = line.split()
+            data_type = tokenized_line[0]
+
+            if data_type in self.data_type:
+                ...
     
     def compile(self, lines: list[str], program_name: str):
         if not self.check_program_line(lines.pop(0), program_name):
             return self.error_handler("Error, the code has an incorrect name in the program line or the line has an incorrect syntaxis")
         
         main_code = self.get_main_program(lines, program_name)
+        if main_code == None:
+            return self.error_handler("Error when starting the program. The Code doesn't have an 'end program' line or its syntax is wrong.")
         
+        self.ignore_data["code"] = main_code
+        self.save_functions(lines)
+        print(self.functions)
+
+        return
         for i, line in enumerate(main_code):
             # if i == self.ignore_index:
             if i == self.ignore_data["ignore_index"]:

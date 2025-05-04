@@ -14,10 +14,8 @@ def main():
             lines = [line.strip() for line in f]
         
         compiler.reset_all()
-        compiler.ignore_data["code"] = lines
 
         program_name: str = file_name.replace(".f90", "")
-
         compiler.compile(lines, program_name)
             
     except FileNotFoundError:

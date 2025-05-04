@@ -1,3 +1,4 @@
+program arrays_example
 integer :: array1(10), j, i, x, array2(10)
 character :: hola
 
@@ -24,3 +25,5 @@ end do
 print*,
 print*, "Arreglo 'array1' final:", array1
 print*, "Arreglo 'array2':", array2
+
+end program arrays_example
