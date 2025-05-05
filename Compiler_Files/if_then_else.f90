@@ -1,3 +1,4 @@
+program if_then_else
 integer :: beta, alpha, zeta, mi_numero, mi_select
 
 beta = 40
@@ -70,3 +71,5 @@ else
     print*, "Segundo if incorrecto"
 end if
 print*, "Adios"
+
+end program if_then_else

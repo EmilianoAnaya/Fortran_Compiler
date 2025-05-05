@@ -1,3 +1,4 @@
+program while_structure
 integer :: i, j, m, x, b, c
 
 i = 0
@@ -61,3 +62,4 @@ do while (i <= 15)
     i = i + 1
 end do
 print*, "Fin ciclo while"
+end program while_structure

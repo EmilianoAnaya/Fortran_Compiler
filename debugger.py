@@ -4,7 +4,9 @@ import os
 
 def main():
     terminal = "hi"
-    file_name: str = "while_structure.f90"
+    file_name: str = "functions_example.f90"
+    # file_name: str = "arrays_example.f90"
+    # file_name: str = "if_then_else.f90"
     compiler = Compiler(terminal, True)
     file_route = os.path.join(Routes.COMPILER_FILES.value, file_name)
     try:
@@ -12,8 +14,9 @@ def main():
             lines = [line.strip() for line in f]
         
         compiler.reset_all()
-        compiler.ignore_data["code"] = lines
-        compiler.compile(lines)
+
+        program_name: str = file_name.replace(".f90", "")
+        compiler.compile(lines, program_name)
             
     except FileNotFoundError:
         print(["file_not_found"])
