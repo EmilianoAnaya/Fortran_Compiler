@@ -30,8 +30,12 @@ program functions_example
 end program functions_example
 
 integer function sumar(a, b)
-    integer :: a, b
-    sumar = a + b
+    integer intent(in) :: a, b
+    integer :: resultado
+    resultado = a + b
+    print*, "Resultado:", resultado
+    sumar = resultado
+
 end function sumar
 
 real function restar()

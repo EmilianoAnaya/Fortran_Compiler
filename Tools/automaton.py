@@ -591,7 +591,6 @@ class Compiler():
             return False, None, None
     
     def save_functions_data(self, lines: list[str], start_index: int, function_name: str, num_params: int, data_type: str) -> bool:
-        print(start_index, function_name, num_params)
         stop_line: str = f"end function {function_name}"
         code_function: list[str] = []
 
@@ -607,7 +606,6 @@ class Compiler():
                 continue
             
             end_line_found = True
-            end_line_index = i
             break
         
         if not end_line_found:
@@ -621,14 +619,13 @@ class Compiler():
         
         self.functions[function_name] = {
             "code" : code_function,
-            "data_type" : data_type,
-            "num_params" : num_params
-            # received_data
-            # return_data
+            "data_type"     : data_type,
+            "num_params"    : num_params,
+            "params"        : None
         }
         return True
 
-    def check_for_functions(self, lines: list[str]) -> bool: 
+    def check_functions(self, lines: list[str]) -> bool: 
         for index, line in enumerate(lines):
             if line == "":
                 continue
@@ -655,7 +652,7 @@ class Compiler():
             return self.error_handler("Error when starting the program. The Code doesn't have an 'end program' line or its syntax is wrong.")
         
         self.ignore_data["code"] = main_code
-        if self.check_for_functions(lines):
+        if self.check_functions(lines):
             return self.error_handler("Error when checking for functions. It appears a function is not well made, try checking all the structure for any syntaxis problems.")
 
         for i, line in enumerate(main_code):
@@ -683,3 +680,4 @@ class Compiler():
 
                 self.line_execution(main_command, formatted_line)
 
+        print(self.functions)
