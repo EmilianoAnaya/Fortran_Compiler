@@ -683,4 +683,3 @@ class Compiler():
 
                 self.line_execution(main_command, formatted_line)
 
-        print(self.functions)
