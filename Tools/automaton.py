@@ -3,7 +3,7 @@ import ast
 import json
 from constants import Routes
 from typing import TYPE_CHECKING
-from Tools.Structures.if_structure import IfStructure
+from Tools.Structures.function_structure import FunctionStructure
 from Tools.check_if_structure import check_if_structure
 from Tools.check_select_structure import check_select_structure
 from Tools.check_do_structure import check_do_structure
@@ -105,6 +105,60 @@ class Compiler():
 
     # def check_for_arrays(self, equation: str) -> str:
     #     ...
+
+    def get_function_params(self, equation: str, function_name: str):
+        initial_bracket: int = equation.find("[")
+        bracket_pile: int = 0
+        
+        params_string: str = ""
+        
+        for index in range(initial_bracket, len(equation)):
+            char: str = equation[index]
+            params_string = params_string + char
+
+            if char == '[':
+                bracket_pile += 1
+
+            if char == ']':
+                bracket_pile -= 1
+
+            if bracket_pile == 0:
+                break
+        
+        if bracket_pile != 0:
+            return None
+        
+        return params_string
+    
+    def find_functions(self, equation: str) -> tuple:
+        for function in self.functions:
+            index_function: int = equation.find(f"{function}[")
+
+            if index_function == -1:
+                continue
+            
+            params = self.get_function_params(equation, function)
+
+            if params == None:
+                return True, None
+            
+            params_list = self.solve_equation(params)
+            if params_list == None:
+                return True, None
+            
+            print(params)
+            print(params_list)
+
+            self.functions[function].execute_function()
+
+
+        return False, 5
+            # while True:
+                # index_function = equation.find(function)
+# 
+                # if index_function == -1:
+                    # break
+
     
     def solve_equation(self, equation: str, msg=None):
         if msg != None:
@@ -113,6 +167,12 @@ class Compiler():
 
         equation = str(equation)
         equation = equation.replace("(","[").replace(")","]")
+        
+        # self.find_functions(equation)
+        error_flag, formatted_equation = self.find_functions(equation)
+        # if error_flag:
+            # self.showing_messages("Error. a function was found but it syntax is wrong")
+            # return None
         
         try:
             return eval(equation, {"__builtins__": None}, parsed_variables)
@@ -585,17 +645,21 @@ class Compiler():
                 return False, None, None
             
             num_params: int = self.count_num_params(function_params)
-            return True, function_name, num_params
+
+            function_params = function_params.replace("(","").replace(")","").replace(",","")
+            function_params = function_params.split(" ")
+            
+            return True, function_name, num_params, function_params
         
         except ValueError:
-            return False, None, None
+            return False, None, None, None
     
-    def save_functions_data(self, lines: list[str], start_index: int, function_name: str, num_params: int, data_type: str) -> bool:
+    def save_functions_data(self, lines: list[str], start_index: int, function_name: str, num_params: int, data_type: str, params: list) -> bool:
         stop_line: str = f"end function {function_name}"
         code_function: list[str] = []
 
         end_line_found: bool = False
-        for i in range(start_index+1, len(lines)):
+        for i in range(start_index, len(lines)):
             line: str = lines[i]
 
             if line == '':
@@ -617,12 +681,16 @@ class Compiler():
         if return_name != function_name:
             return False
         
-        self.functions[function_name] = {
-            "code" : code_function,
-            "data_type"     : data_type,
-            "num_params"    : num_params,
-            "params"        : None
-        }
+        self.functions[function_name] = FunctionStructure(
+            self, data_type, code_function, num_params, params
+        )
+        
+        # self.functions[function_name] = {
+            # "code" : code_function,
+            # "data_type"     : data_type,
+            # "num_params"    : num_params,
+            # "params"        : params
+        # }
         return True
 
     def check_functions(self, lines: list[str]) -> bool: 
@@ -634,11 +702,11 @@ class Compiler():
             function_data_type: str = tokenized_line[0]
 
             if function_data_type in self.data_type:
-                error_flag, function_name, num_params = self.check_function_syntaxis(tokenized_line)
+                error_flag, function_name, num_params, params = self.check_function_syntaxis(tokenized_line)
                 if not error_flag:
                     continue
                 
-                if not self.save_functions_data(lines, index, function_name, num_params, function_data_type):
+                if not self.save_functions_data(lines, index, function_name, num_params, function_data_type, params):
                     return True
 
         return False

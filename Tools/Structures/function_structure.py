@@ -3,8 +3,8 @@ if TYPE_CHECKING:
     from Tools.automaton import Compiler
 
 class FunctionStructure():
-    def __init__(self, compiler: Compiler, data_type: str, function_code: list[str], num_params: int, params: list[str]):
-        self.compiler = compiler
+    def __init__(self, compiler, data_type: str, function_code: list[str], num_params: int, params: list[str]):
+        self.compiler: Compiler = compiler
         self.ignore_data: dict = {
             "code"              : function_code,
             "ignore_code"       : False,

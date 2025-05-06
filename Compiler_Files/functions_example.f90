@@ -1,31 +1,21 @@
 program functions_example
 
-    integer :: array1(10), j, i, x, array2(10)
-    character :: hola
-    
-    x = 15
-    array1 = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-    
-    print*, "Arreglo 'array1' inicial:", array1
-    do i = 9, 0, -1
-        array1(i) = array1(i) * 2
-        if (array1(i) == 10) then
-            print*,
-            print*, "HELLO WORLD", i
-            print*,
-            print*, "Entramos a un nuevo do!"
-            do j = 0, 9
-                print*, "Posición", j, "Se añade:", j
-                array2(j) = j
-            end do
-            print*, "Salimos del do anidado"
-            print*,
-        end if
-        print*, "Posición", i, "Cambia a:", array1(i)
-    end do
-    print*,
-    print*, "Arreglo 'array1' final:", array1
-    print*, "Arreglo 'array2':", array2
+integer :: i, j, result
+integer :: array1(5)
+
+i = 15
+j = 20
+
+array1 = [1, 2, 3, 4, 5]
+
+result = sumar(array1(4), i) * sumar(12, j)
+print*, "Resultado de la suma de 'i' más 'j':", result
+
+result = restar(j, 10)
+print*, "Resultado de la resta de 'j' menos 10:", result
+
+result = sumar(12, 40) - restar(j, i)
+print*, "Resultado de resta de 'sumar(12, 40)' menos 'restar(j,i)':", result
 
 end program functions_example
 
@@ -35,8 +25,8 @@ integer function sumar(a, b)
     resultado = a + b
     print*, "Resultado:", resultado
     sumar = resultado
-
 end function sumar
+
 
 real function restar()
     real :: a, b
