@@ -138,18 +138,17 @@ class Compiler():
                 continue
             
             params = self.get_function_params(equation, function)
-
             if params == None:
                 return True, None
             
-            params_list = self.solve_equation(params)
+            params_list: list = self.solve_equation(params)
             if params_list == None:
                 return True, None
-            
-            print(params)
-            print(params_list)
 
-            self.functions[function].execute_function()
+            if not self.functions[function].check_params(params_list):
+                return True, None
+            
+            self.functions[function].execute_function(params_list)
 
 
         return False, 5
@@ -659,7 +658,7 @@ class Compiler():
         code_function: list[str] = []
 
         end_line_found: bool = False
-        for i in range(start_index, len(lines)):
+        for i in range(start_index+1, len(lines)):
             line: str = lines[i]
 
             if line == '':
@@ -682,7 +681,7 @@ class Compiler():
             return False
         
         self.functions[function_name] = FunctionStructure(
-            self, data_type, code_function, num_params, params
+            self, data_type, code_function, num_params, params, function_name
         )
         
         # self.functions[function_name] = {
@@ -747,5 +746,3 @@ class Compiler():
                     continue
 
                 self.line_execution(main_command, formatted_line)
-
-        print(self.functions)

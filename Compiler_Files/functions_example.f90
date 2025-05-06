@@ -20,7 +20,7 @@ print*, "Resultado de resta de 'sumar(12, 40)' menos 'restar(j,i)':", result
 end program functions_example
 
 integer function sumar(a, b)
-    integer intent(in) :: a, b
+    integer intent(in) :: b, a
     integer :: resultado
     resultado = a + b
     print*, "Resultado:", resultado
