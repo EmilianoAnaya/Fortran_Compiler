@@ -176,13 +176,13 @@ class Compiler():
         
         # self.find_functions(equation)
         error_flag, formatted_equation = self.find_functions(equation)
-        if error_flag:
-            self.showing_messages("Error. a function was found but it syntax is wrong")
-            return None
-
         if self.compile_error_flag:
             return None
         
+        if error_flag:
+            self.showing_messages("Error, a function was found but it syntax is wrong")
+            return None
+
         try:
             return eval(formatted_equation, {"__builtins__": None}, parsed_variables)
         except TypeError:
@@ -645,13 +645,16 @@ class Compiler():
 
         params_pattern = r'^\(\s*(\w+(, \w+)*)?\s*\)$'
         name_pattern = r'^[a-zA-Z_]\w*$'
+
+        if function_name_params[-1] != ")":
+            return False, None, None, None
         
         try:
             function_name, function_params = function_name_params.split("(")
             function_params = "(" + function_params
 
             if function_word != "function" or not re.match(name_pattern, function_name) or not re.match(params_pattern, function_params):
-                return False, None, None
+                return False, None, None, None
             
             num_params: int = self.count_num_params(function_params)
 

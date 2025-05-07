@@ -22,7 +22,7 @@ class FunctionStructure():
         self.received_params: list = []
         self.variables_main: dict = {}
 
-        self.last_line: str = self.ignore_data["code"].pop(-1)
+        self.last_line: str = self.ignore_data["code"][-1]
 
     def check_params(self, params: list) -> bool:
         if len(self.function_data["params"]) == len(params):
@@ -56,6 +56,10 @@ class FunctionStructure():
                         
                     except ValueError:
                         return self.compiler.error_handler("The data type for the parameter received doesn't concord with the data type in the line")
+                    except TypeError:
+                        return self.compiler.error_handler("Error, The data received is a complete list wich cannot be managable")
+                else:
+                    return self.compiler.error_handler(f"Error, the '{arg}' variable is not present in the parameter variables")
 
 
         elif intent_in == "::":
@@ -72,7 +76,10 @@ class FunctionStructure():
         for i, line in enumerate(self.ignore_data["code"]):
             if i == self.ignore_data["ignore_index"]:
                 self.ignore_data["execute_function"]()
-                self.ignore_data["ignore"] = False
+                self.ignore_data["ignore_code"] = False
+            
+            if i == len(self.ignore_data["code"])-1:
+                break
             
             if self.compiler.compile_error_flag:
                 break
@@ -97,6 +104,9 @@ class FunctionStructure():
                 
                 self.compiler.line_execution(main_command, formatted_line)
 
+        if self.compiler.compile_error_flag:
+            return
+        
         formatted_line = self.last_line.split(" ")
         operation = formatted_line[2:]
 
