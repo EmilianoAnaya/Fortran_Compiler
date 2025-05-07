@@ -20,8 +20,9 @@ class FunctionStructure():
         }
 
         self.received_params: list = []
+        self.variables_main: dict = {}
 
-        self.variables_main: dict = self.compiler.variables.copy()
+        self.last_line: str = self.ignore_data["code"].pop(-1)
 
     def check_params(self, params: list) -> bool:
         if len(self.function_data["params"]) == len(params):
@@ -36,15 +37,25 @@ class FunctionStructure():
             double_colon: str = formatted_line[2]
             
             if not double_colon == "::":
-                return self.error_handler("Initialization Error")
+                return self.compiler.error_handler("Initialization Error")
             
             args: str = formatted_line[3:]
             formatted_args: list[str] = [arg.replace(",","") for arg in args]
 
-            print(formatted_args)
+            # print(formatted_args)
+            # print(self.received_params)
+            
             for arg in formatted_args:
                 if not arg in self.compiler.variables and arg in self.function_data["params"]:
-                    ...
+                    index_parameter: int = self.function_data["params"].index(arg)
+                    data_received = self.received_params[index_parameter]
+                    
+                    try:
+                        data_formated = self.compiler.data_type[data_type](data_received)
+                        self.compiler.variables[arg] = {"data_type" : data_type, "value" : data_formated, "size" : 1, "is_list" : False}
+                        
+                    except ValueError:
+                        return self.compiler.error_handler("The data type for the parameter received doesn't concord with the data type in the line")
 
 
         elif intent_in == "::":
@@ -53,6 +64,8 @@ class FunctionStructure():
             return self.error_handler("Initialization Error")
     
     def execute_function(self, params_list: list):
+        self.variables_main = self.compiler.variables.copy()
+        
         self.compiler.variables = {}
         self.received_params = params_list
 
@@ -84,4 +97,20 @@ class FunctionStructure():
                 
                 self.compiler.line_execution(main_command, formatted_line)
 
+        formatted_line = self.last_line.split(" ")
+        operation = formatted_line[2:]
+
+        expression = " ".join(operation)
+
+        result = self.compiler.solve_equation(expression)
+        if result == None:
+            return self.compiler.error_handler("The integrity of the operation is unclear in the return of the function")
+
+        try:
+            result = self.compiler.data_type[self.function_data["data_type"]](result)
+        except ValueError:
+            return self.compiler.error_handler("The data type for the return data of the function doesn't match with the type to return")
+
         self.compiler.variables = self.variables_main.copy()
+
+        return result

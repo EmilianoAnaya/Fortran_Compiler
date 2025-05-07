@@ -132,26 +132,33 @@ class Compiler():
     
     def find_functions(self, equation: str) -> tuple:
         for function in self.functions:
-            index_function: int = equation.find(f"{function}[")
+            while True:
+                index_function: int = equation.find(f"{function}[")
 
-            if index_function == -1:
-                continue
-            
-            params = self.get_function_params(equation, function)
-            if params == None:
-                return True, None
-            
-            params_list: list = self.solve_equation(params)
-            if params_list == None:
-                return True, None
+                if index_function == -1:
+                    break
+                
+                params = self.get_function_params(equation, function)
+                if params == None:
+                    return True, None
 
-            if not self.functions[function].check_params(params_list):
-                return True, None
-            
-            self.functions[function].execute_function(params_list)
+                params_list: list = self.solve_equation(params)
+                if params_list == None:
+                    return True, None
 
+                if not self.functions[function].check_params(params_list):
+                    return True, None
 
-        return False, 5
+                result = self.functions[function].execute_function(params_list)
+
+                if self.compile_error_flag:
+                    return True, None
+
+                function_part = f"{function}{params}"
+                equation = equation.replace(function_part, str(result))
+
+        # print(equation)
+        return False, equation
             # while True:
                 # index_function = equation.find(function)
 # 
@@ -169,12 +176,15 @@ class Compiler():
         
         # self.find_functions(equation)
         error_flag, formatted_equation = self.find_functions(equation)
-        # if error_flag:
-            # self.showing_messages("Error. a function was found but it syntax is wrong")
-            # return None
+        if error_flag:
+            self.showing_messages("Error. a function was found but it syntax is wrong")
+            return None
+
+        if self.compile_error_flag:
+            return None
         
         try:
-            return eval(equation, {"__builtins__": None}, parsed_variables)
+            return eval(formatted_equation, {"__builtins__": None}, parsed_variables)
         except TypeError:
             self.showing_messages("The data type of the expressions used are different from each other")
         except SyntaxError:
@@ -677,7 +687,7 @@ class Compiler():
         last_line: list[str] = code_function[-1].split()
         return_name: str = last_line[0]
 
-        if return_name != function_name:
+        if return_name != function_name or last_line[1] != "=":
             return False
         
         self.functions[function_name] = FunctionStructure(
