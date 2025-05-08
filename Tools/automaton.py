@@ -190,28 +190,29 @@ class Compiler():
     def find_arrays(self, equation: str):
         for variable in self.variables:
             if self.variables[variable]["is_list"] == True:
-                index_array: int = equation.find(f"{variable}(")
+                while True:
+                    index_array: int = equation.find(f"{variable}(")
 
-                if index_array == -1:
-                    continue
+                    if index_array == -1:
+                        break
 
-                len_array: int = len(f"{variable}(")
-                array_index_brackets = self.get_array_index(equation, index_array, len_array)
-                if array_index_brackets == None:
-                    return True, None
-                
-                try:
-                    array_index = array_index_brackets[1:-1]
-                    array_index = int(self.is_variable(array_index))
+                    len_array: int = len(f"{variable}(")
+                    array_index_brackets = self.get_array_index(equation, index_array, len_array)
+                    if array_index_brackets == None:
+                        return True, None
 
-                    result = self.variables[variable]["value"][array_index]
-                    array_part = f"{variable}{array_index_brackets}"
-                    
-                    equation = equation.replace(array_part, str(result))
-                except IndexError:
-                    return f"It was tried to access an index that doesn't exist in the '{variable}' array", None
-                except ValueError:
-                    return f"It was tried to use a float number for the index in the '{variable}' array", None
+                    try:
+                        array_index = array_index_brackets[1:-1]
+                        array_index = int(self.is_variable(array_index))
+
+                        result = self.variables[variable]["value"][array_index]
+                        array_part = f"{variable}{array_index_brackets}"
+
+                        equation = equation.replace(array_part, str(result))
+                    except IndexError:
+                        return f"It was tried to access an index that doesn't exist in the '{variable}' array", None
+                    except ValueError:
+                        return f"It was tried to use a float number for the index in the '{variable}' array", None
         
         return None, equation
 

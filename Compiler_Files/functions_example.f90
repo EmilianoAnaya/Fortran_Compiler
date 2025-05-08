@@ -1,6 +1,7 @@
 program functions_example
 
-integer :: i, j, result
+integer :: i, j
+real :: result
 integer :: array1(5)
 
 i = 15
@@ -8,7 +9,7 @@ j = 20
 
 array1 = [1, 2, 3, 4, 5]
 
-result = sumar(i, array1(4)) + sumar(array1(1), j)
+result = sumar(array1(0), array1(4)) + sumar(array1(1), j)
 print*, "Resultado de la suma de dos funciones de 'sumar' es:", result
 
 result = restar(j, 10) * 2 + 2
@@ -19,9 +20,11 @@ print*, "Resultado de resta de 'sumar(12 40)' menos 'restar(j i)':", result
 
 end program functions_example
 
-integer function sumar(a, b)
-    integer intent(in) :: b, a
-    integer :: resultado, i
+real function sumar(a, b)
+    integer intent(in) :: b
+    real intent(in) :: a
+    integer :: i
+    real :: resultado
     resultado = a + b
 
     print*,
