@@ -62,7 +62,7 @@ class FunctionStructure():
                     except TypeError:
                         return self.compiler.error_handler("Error, The data received is a complete list wich cannot be managable")
                 else:
-                    return self.compiler.error_handler(f"Error, the '{arg}' variable is not present in the parameter variables")
+                    return self.compiler.error_handler(f"Error, the '{arg}' variable is not present in the parameter variables or it has been already initialized before with another data type")
 
 
         elif intent_in == "::":
