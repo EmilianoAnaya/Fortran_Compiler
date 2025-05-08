@@ -1,3 +1,4 @@
+program for_structure
 integer :: i, j, z, x, alpha, beta
 
 alpha = 30
@@ -58,3 +59,4 @@ print*,
 print*, "Estado final de 'i':", i
 print*, "Estado final de 'j':", j
 print*, "Estado final de 'z':", z
+end program for_structure

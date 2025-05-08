@@ -4,9 +4,9 @@ import os
 
 def main():
     terminal = "hi"
-    file_name: str = "functions_example.f90"
+    # file_name: str = "functions_example.f90"
     # file_name: str = "while_structure.f90"
-    # file_name: str = "if_then_else.f90"
+    file_name: str = "for_structure.f90"
     compiler = Compiler(terminal, True)
     file_route = os.path.join(Routes.COMPILER_FILES.value, file_name)
     try:

@@ -587,6 +587,10 @@ class Compiler():
             expression = " ".join(args)
 
             expression = self.solve_equation(expression)
+            
+            if self.compile_error_flag:
+                return
+            
             if expression == None:
                 return self.error_handler("The integrity of the operation is unclear")
             
