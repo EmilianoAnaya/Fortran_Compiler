@@ -25,9 +25,12 @@ class FunctionStructure():
         self.last_line: str = self.ignore_data["code"][-1]
 
     def check_params(self, params: list) -> bool:
-        if len(self.function_data["params"]) == len(params):
-            return True
-        return False
+        try: 
+            if len(self.function_data["params"]) == len(params):
+                return True
+            return False
+        except TypeError:
+            return False
 
     def parameter_initialization(self, formatted_line: list[str]):
         data_type: str = formatted_line[0]

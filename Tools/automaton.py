@@ -103,11 +103,8 @@ class Compiler():
         self.current_libraries: dict = {}
         self.variables: dict = {}
 
-    # def check_for_arrays(self, equation: str) -> str:
-    #     ...
-
-    def get_function_params(self, equation: str, function_name: str):
-        initial_bracket: int = equation.find("[")
+    def get_function_params(self, equation: str, index_function: int, len_function: int):
+        initial_bracket: int = (index_function + len_function) - 1
         bracket_pile: int = 0
         
         params_string: str = ""
@@ -116,10 +113,10 @@ class Compiler():
             char: str = equation[index]
             params_string = params_string + char
 
-            if char == '[':
+            if char == '(':
                 bracket_pile += 1
 
-            if char == ']':
+            if char == ')':
                 bracket_pile -= 1
 
             if bracket_pile == 0:
@@ -133,12 +130,13 @@ class Compiler():
     def find_functions(self, equation: str) -> tuple:
         for function in self.functions:
             while True:
-                index_function: int = equation.find(f"{function}[")
+                index_function: int = equation.find(f"{function}(")
 
                 if index_function == -1:
                     break
                 
-                params = self.get_function_params(equation, function)
+                len_function: int = len(f"{function}(")
+                params = self.get_function_params(equation, index_function, len_function)
                 if params == None:
                     return True, None
 
@@ -165,14 +163,64 @@ class Compiler():
                 # if index_function == -1:
                     # break
 
+    def get_array_index(self, equation: str, index_array: int, len_array: int):
+        initial_bracket: int = (index_array + len_array) - 1
+        bracket_pile: int = 0
+
+        index_string: str = ""
+
+        for index in range(initial_bracket, len(equation)):
+            char: str = equation[index]
+            index_string = index_string + char
+
+            if char == '(':
+                bracket_pile += 1
+
+            if char == ')':
+                bracket_pile -= 1
+
+            if bracket_pile == 0:
+                break
+        
+        if bracket_pile != 0:
+            return None
+        
+        return index_string
     
+    def find_arrays(self, equation: str):
+        for variable in self.variables:
+            if self.variables[variable]["is_list"] == True:
+                index_array: int = equation.find(f"{variable}(")
+
+                if index_array == -1:
+                    continue
+
+                len_array: int = len(f"{variable}(")
+                array_index_brackets = self.get_array_index(equation, index_array, len_array)
+                if array_index_brackets == None:
+                    return True, None
+                
+                try:
+                    array_index = array_index_brackets[1:-1]
+                    array_index = int(self.is_variable(array_index))
+
+                    result = self.variables[variable]["value"][array_index]
+                    array_part = f"{variable}{array_index_brackets}"
+                    
+                    equation = equation.replace(array_part, str(result))
+                except IndexError:
+                    return f"It was tried to access an index that doesn't exist in the '{variable}' array", None
+                except ValueError:
+                    return f"It was tried to use a float number for the index in the '{variable}' array", None
+        
+        return None, equation
+
     def solve_equation(self, equation: str, msg=None):
         if msg != None:
             print(msg)
         parsed_variables = {key: value["value"] for key, value in self.variables.items()}
 
         equation = str(equation)
-        equation = equation.replace("(","[").replace(")","]")
         
         # self.find_functions(equation)
         error_flag, formatted_equation = self.find_functions(equation)
@@ -180,17 +228,22 @@ class Compiler():
             return None
         
         if error_flag:
-            self.showing_messages("Error, a function was found but it syntax is wrong")
+            self.error_handler("Error, a function was found but it syntax is wrong")
             return None
-
+        
+        error_msg, formatted_equation = self.find_arrays(formatted_equation)
+        if error_msg != None:
+            self.error_handler(error_msg)
+            return None
+        
         try:
             return eval(formatted_equation, {"__builtins__": None}, parsed_variables)
         except TypeError:
-            self.showing_messages("The data type of the expressions used are different from each other")
+            self.error_handler("The data type of the expressions used are different from each other")
         except SyntaxError:
-            self.showing_messages(f"The syntaxis of the expression '{equation}' is wrongly used")
+            self.error_handler(f"The syntaxis of the expression '{equation}' is wrongly used")
         except IndexError:
-            self.showing_messages(f"Error, it was tried to access to an index which the array doesn't have")
+            self.error_handler(f"Error, it was tried to access to an index which the array doesn't have")
         return None
     
     def clean_strings(self, string: str) -> str:
