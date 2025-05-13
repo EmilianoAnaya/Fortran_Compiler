@@ -3,7 +3,7 @@ import ast
 import json
 from constants import Routes
 from typing import TYPE_CHECKING
-from Tools.Structures.if_structure import IfStructure
+from Tools.Structures.function_structure import FunctionStructure
 from Tools.check_if_structure import check_if_structure
 from Tools.check_select_structure import check_select_structure
 from Tools.check_do_structure import check_do_structure
@@ -103,25 +103,148 @@ class Compiler():
         self.current_libraries: dict = {}
         self.variables: dict = {}
 
-    # def check_for_arrays(self, equation: str) -> str:
-    #     ...
+    def get_function_params(self, equation: str, index_function: int, len_function: int):
+        initial_bracket: int = (index_function + len_function) - 1
+        bracket_pile: int = 0
+        
+        params_string: str = ""
+        
+        for index in range(initial_bracket, len(equation)):
+            char: str = equation[index]
+            params_string = params_string + char
+
+            if char == '(':
+                bracket_pile += 1
+
+            if char == ')':
+                bracket_pile -= 1
+
+            if bracket_pile == 0:
+                break
+        
+        if bracket_pile != 0:
+            return None
+        
+        return params_string
     
+    def find_functions(self, equation: str) -> tuple:
+        for function in self.functions:
+            while True:
+                index_function: int = equation.find(f"{function}(")
+
+                if index_function == -1:
+                    break
+                
+                len_function: int = len(f"{function}(")
+                params = self.get_function_params(equation, index_function, len_function)
+                if params == None:
+                    return True, None
+
+                params_list: list = self.solve_equation(params)
+                if params_list == None:
+                    return True, None
+
+                if not self.functions[function].check_params(params_list):
+                    return True, None
+
+                result = self.functions[function].execute_function(params_list)
+
+                if self.compile_error_flag:
+                    return True, None
+
+                function_part = f"{function}{params}"
+                equation = equation.replace(function_part, str(result))
+
+        # print(equation)
+        return False, equation
+            # while True:
+                # index_function = equation.find(function)
+# 
+                # if index_function == -1:
+                    # break
+
+    def get_array_index(self, equation: str, index_array: int, len_array: int):
+        initial_bracket: int = (index_array + len_array) - 1
+        bracket_pile: int = 0
+
+        index_string: str = ""
+
+        for index in range(initial_bracket, len(equation)):
+            char: str = equation[index]
+            index_string = index_string + char
+
+            if char == '(':
+                bracket_pile += 1
+
+            if char == ')':
+                bracket_pile -= 1
+
+            if bracket_pile == 0:
+                break
+        
+        if bracket_pile != 0:
+            return None
+        
+        return index_string
+    
+    def find_arrays(self, equation: str):
+        for variable in self.variables:
+            if self.variables[variable]["is_list"] == True:
+                while True:
+                    index_array: int = equation.find(f"{variable}(")
+
+                    if index_array == -1:
+                        break
+
+                    len_array: int = len(f"{variable}(")
+                    array_index_brackets = self.get_array_index(equation, index_array, len_array)
+                    if array_index_brackets == None:
+                        return True, None
+
+                    try:
+                        array_index = array_index_brackets[1:-1]
+                        array_index = int(self.is_variable(array_index))
+
+                        result = self.variables[variable]["value"][array_index]
+                        array_part = f"{variable}{array_index_brackets}"
+
+                        equation = equation.replace(array_part, str(result))
+                    except IndexError:
+                        return f"It was tried to access an index that doesn't exist in the '{variable}' array", None
+                    except ValueError:
+                        return f"It was tried to use a float number for the index in the '{variable}' array", None
+        
+        return None, equation
+
     def solve_equation(self, equation: str, msg=None):
         if msg != None:
             print(msg)
         parsed_variables = {key: value["value"] for key, value in self.variables.items()}
 
         equation = str(equation)
-        equation = equation.replace("(","[").replace(")","]")
+        
+        # self.find_functions(equation)
+        error_flag, formatted_equation = self.find_functions(equation)
+        if self.compile_error_flag:
+            return None
+        
+        if error_flag:
+            self.error_handler("Error, a function was found but it syntax is wrong")
+            return None
+        
+        error_msg, formatted_equation = self.find_arrays(formatted_equation)
+        if error_msg != None:
+            self.error_handler(error_msg)
+            return None
         
         try:
-            return eval(equation, {"__builtins__": None}, parsed_variables)
+            return eval(formatted_equation, {"__builtins__": None}, parsed_variables)
         except TypeError:
-            self.showing_messages("The data type of the expressions used are different from each other")
+            self.error_handler("The data type of the expressions used are different from each other")
         except SyntaxError:
-            self.showing_messages(f"The syntaxis of the expression '{equation}' is wrongly used")
+            self.error_handler(f"The syntaxis of the expression '{equation}' is wrongly used")
         except IndexError:
-            self.showing_messages(f"Error, it was tried to access to an index which the array doesn't have")
+            self.error_handler(f"Error, it was tried to access to an index which the array doesn't have")
         return None
     
     def clean_strings(self, string: str) -> str:
@@ -464,6 +587,10 @@ class Compiler():
             expression = " ".join(args)
 
             expression = self.solve_equation(expression)
+            
+            if self.compile_error_flag:
+                return
+            
             if expression == None:
                 return self.error_handler("The integrity of the operation is unclear")
             
@@ -576,22 +703,28 @@ class Compiler():
 
         params_pattern = r'^\(\s*(\w+(, \w+)*)?\s*\)$'
         name_pattern = r'^[a-zA-Z_]\w*$'
+
+        if function_name_params[-1] != ")":
+            return False, None, None, None
         
         try:
             function_name, function_params = function_name_params.split("(")
             function_params = "(" + function_params
 
             if function_word != "function" or not re.match(name_pattern, function_name) or not re.match(params_pattern, function_params):
-                return False, None, None
+                return False, None, None, None
             
             num_params: int = self.count_num_params(function_params)
-            return True, function_name, num_params
+
+            function_params = function_params.replace("(","").replace(")","").replace(",","")
+            function_params = function_params.split(" ")
+            
+            return True, function_name, num_params, function_params
         
         except ValueError:
-            return False, None, None
+            return False, None, None, None
     
-    def save_functions_data(self, lines: list[str], start_index: int, function_name: str, num_params: int, data_type: str) -> bool:
-        print(start_index, function_name, num_params)
+    def save_functions_data(self, lines: list[str], start_index: int, function_name: str, num_params: int, data_type: str, params: list) -> bool:
         stop_line: str = f"end function {function_name}"
         code_function: list[str] = []
 
@@ -607,7 +740,6 @@ class Compiler():
                 continue
             
             end_line_found = True
-            end_line_index = i
             break
         
         if not end_line_found:
@@ -616,19 +748,22 @@ class Compiler():
         last_line: list[str] = code_function[-1].split()
         return_name: str = last_line[0]
 
-        if return_name != function_name:
+        if return_name != function_name or last_line[1] != "=":
             return False
         
-        self.functions[function_name] = {
-            "code" : code_function,
-            "data_type" : data_type,
-            "num_params" : num_params
-            # received_data
-            # return_data
-        }
+        self.functions[function_name] = FunctionStructure(
+            self, data_type, code_function, num_params, params, function_name
+        )
+        
+        # self.functions[function_name] = {
+            # "code" : code_function,
+            # "data_type"     : data_type,
+            # "num_params"    : num_params,
+            # "params"        : params
+        # }
         return True
 
-    def check_for_functions(self, lines: list[str]) -> bool: 
+    def check_functions(self, lines: list[str]) -> bool: 
         for index, line in enumerate(lines):
             if line == "":
                 continue
@@ -637,11 +772,11 @@ class Compiler():
             function_data_type: str = tokenized_line[0]
 
             if function_data_type in self.data_type:
-                error_flag, function_name, num_params = self.check_function_syntaxis(tokenized_line)
+                error_flag, function_name, num_params, params = self.check_function_syntaxis(tokenized_line)
                 if not error_flag:
                     continue
                 
-                if not self.save_functions_data(lines, index, function_name, num_params, function_data_type):
+                if not self.save_functions_data(lines, index, function_name, num_params, function_data_type, params):
                     return True
 
         return False
@@ -655,7 +790,7 @@ class Compiler():
             return self.error_handler("Error when starting the program. The Code doesn't have an 'end program' line or its syntax is wrong.")
         
         self.ignore_data["code"] = main_code
-        if self.check_for_functions(lines):
+        if self.check_functions(lines):
             return self.error_handler("Error when checking for functions. It appears a function is not well made, try checking all the structure for any syntaxis problems.")
 
         for i, line in enumerate(main_code):
@@ -682,4 +817,3 @@ class Compiler():
                     continue
 
                 self.line_execution(main_command, formatted_line)
-
